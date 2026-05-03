@@ -436,14 +436,16 @@ ${svgStr}
 });
 
 window.addEventListener("load", () => {
-  document.getElementById("help-btn").addEventListener("click", () =>
-    document.getElementById("help-overlay").classList.add("open"));
-  document.getElementById("help-close").addEventListener("click", () =>
-    document.getElementById("help-overlay").classList.remove("open"));
-  document.getElementById("help-overlay").addEventListener("click", e => {
-    if (e.target === document.getElementById("help-overlay"))
-      document.getElementById("help-overlay").classList.remove("open");
-  });
+  const helpBtn     = document.getElementById("help-btn");
+  const helpOverlay = document.getElementById("help-overlay");
+  const helpClose   = document.getElementById("help-close");
+  if (helpBtn && helpOverlay && helpClose) {
+    helpBtn.addEventListener("click", () => helpOverlay.classList.add("open"));
+    helpClose.addEventListener("click", () => helpOverlay.classList.remove("open"));
+    helpOverlay.addEventListener("click", e => {
+      if (e.target === helpOverlay) helpOverlay.classList.remove("open");
+    });
+  }
   input.value = JSON.stringify({
   "version": "drawplan/v1",
   "unit": "mm",
