@@ -1,0 +1,149 @@
+{
+  "version": "drawplan/v1",
+  "unit": "mm",
+  "plot": {
+    "width": 21940,
+    "depth": 59360,
+    "label": "Mảnh đất"
+  },
+  "items": [
+    {
+      "id": "house",
+      "label": "Nhà",
+      "labelRotation": 0,
+      "showDimensions": {
+        "top": { "labelPos": "inner" },
+        "right": { "labelPos": "inner" }
+      },
+      "type": "rect",
+      "x": 8710,
+      "y": 31465,
+      "width": 8730,
+      "height": 21000,
+      "style": "solid",
+      "strokeWidth": 150
+    },
+    {
+      "id": "main-entrance",
+      "label": "",
+      "type": "rect",
+      "x": 17440,
+      "y": 31465,
+      "width": 4500,
+      "height": 21000,
+      "style": "dashed",
+      "showDimensions": {
+        "right": false
+      }
+    },
+    {
+      "id": "parking",
+      "label": "Sân đỗ xe",
+      "type": "rect",
+      "x": 8710,
+      "y": 52465,
+      "width": 8730,
+      "height": 6895,
+      "style": "dashed"
+    },
+    {
+      "id": "terrace",
+      "label": "Ban công",
+      "type": "rect",
+      "x": 8680,
+      "y": 27665,
+      "width": 5030,
+      "height": 3800,
+      "style": "dashed"
+    },
+    {
+      "id": "west-garden",
+      "label": "Sân phía tây",
+      "type": "rect",
+      "x": 5510,
+      "y": 27665,
+      "width": 3200,
+      "height": 16680,
+      "style": "dashed",
+      "showDimensions": {
+        "left": { "labelPos": "outer" }
+      }
+    },
+    {
+      "id": "garage",
+      "label": "Nhà kho",
+      "type": "rect",
+      "x": 13415,
+      "y": 1125,
+      "width": 7400,
+      "height": 21947,
+      "style": "solid",
+      "showDimensions": {
+        "top": false,
+        "bottom": { "labelPos": "outer" },
+        "right": { "labelPos": "inner" }
+      }
+    },
+    {
+      "id": "doors",
+      "label": "Cửa chính",
+      "type": "rect",
+      "x": 17400,
+      "y": 39988,
+      "width": 2500,
+      "height": 2700,
+      "style": "dashed",
+      "stroke": "none",
+      "showDimensions": {
+        "top": false
+      }
+    },
+    {
+      "id": "garage-path",
+      "label": "Lối nhà kho",
+      "type": "rect",
+      "x": 11415,
+      "y": 1125,
+      "width": 2000,
+      "height": 21947,
+      "style": "dashed",
+      "showDimensions": {
+        "top": false,
+        "right": false,
+        "left": { "labelPos": "outer" },
+        "bottom": { "labelPos": "outer" }
+      }
+    },
+    {
+      "id": "measure-main-door-pos",
+      "type": "measure",
+      "from": [17400, 42688],
+      "to": [17400, 52465],
+      "label": "9777",
+      "labelPos": "outer"
+    },
+    {
+      "id": "measure-house-store",
+      "type": "measure",
+      "from": [21940, 23023],
+      "to": [21940, 31465],
+      "label": "8442",
+      "labelPos": "outer"
+    },
+    {
+      "id": "measure-garage-right",
+      "type": "measure",
+      "from": [21940, 23023],
+      "to": [20815, 23023],
+      "label": "1125",
+      "labelPos": "inner"
+    },
+    {
+      "id": "measure-garage-top",
+      "type": "measure",
+      "from": [16815, 0],
+      "to": [16815, 1125],
+      "label": "1125"
+    }
+  ]
+}
