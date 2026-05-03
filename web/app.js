@@ -1,4 +1,5 @@
 // app.js — DrawPlan UI
+// Render qua server API nếu có, fallback sang local engine nếu mở file trực tiếp
 
 const input      = document.getElementById("input");
 const runBtn     = document.getElementById("run");
@@ -213,6 +214,15 @@ zoomOut.addEventListener("click", () => {
 zoomReset.addEventListener("click", resetView);
 
 // ── Render ─────────────────────────────────────────────────────────────────────
+function renderLocal(doc) {
+  // Dùng compile/renderSvg từ engine-core.js (nếu có) hoặc engine.js
+  if (typeof compile === "undefined" || typeof renderSvg === "undefined") {
+    throw new Error("Engine chưa được load — mở qua server hoặc dùng index.html standalone");
+  }
+  const scene = compile(doc);
+  return renderSvg(scene);
+}
+
 runBtn.addEventListener("click", async () => {
   errorBox.textContent = "";
 
@@ -224,6 +234,7 @@ runBtn.addEventListener("click", async () => {
     return;
   }
 
+  let svgStr;
   try {
     const resp = await fetch("/api/render", {
       method: "POST",
@@ -231,28 +242,24 @@ runBtn.addEventListener("click", async () => {
       body: JSON.stringify(doc),
     });
     const data = await resp.json();
-
-    if (data.error) {
-      errorBox.textContent = "Lỗi: " + data.error;
-      return;
-    }
-
-    svgWrap.innerHTML = data.svg;
-    currentDoc = doc;   // store for measure tool
-    clearMeasureOverlay(); // reset overlay after re-render
-
-    // parse SVG dimensions
-    const svg = getSvg();
-    if (svg) {
-      lastSvgW = parseFloat(svg.getAttribute("width")  ?? "1400");
-      lastSvgH = parseFloat(svg.getAttribute("height") ?? "900");
-      viewBox   = { x: 0, y: 0, w: lastSvgW, h: lastSvgH };
-    }
-
-    unitHint.textContent = `Đơn vị: ${doc.unit ?? "mm"}`;
-  } catch (err) {
-    errorBox.textContent = String(err);
+    if (data.error) { errorBox.textContent = "Lỗi: " + data.error; return; }
+    svgStr = data.svg;
+  } catch {
+    // Không có server — render local
+    try { svgStr = renderLocal(doc); } catch (err) { errorBox.textContent = String(err); return; }
   }
+
+  svgWrap.innerHTML = svgStr;
+  currentDoc = doc;
+  clearMeasureOverlay();
+
+  const svg = getSvg();
+  if (svg) {
+    lastSvgW = parseFloat(svg.getAttribute("width")  ?? "1400");
+    lastSvgH = parseFloat(svg.getAttribute("height") ?? "900");
+    viewBox   = { x: 0, y: 0, w: lastSvgW, h: lastSvgH };
+  }
+  unitHint.textContent = `Đơn vị: ${doc.unit ?? "mm"}`;
 });
 
 // Copy SVG

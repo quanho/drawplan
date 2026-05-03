@@ -15,10 +15,13 @@ const root = join(__dirname, "..");
 const html   = readFileSync(join(root, "web", "index.html"), "utf8");
 const engine = readFileSync(join(root, "web", "engine.js"), "utf8");
 
-const output = html.replace(
-  '<script src="app.js"></script>',
-  `<script>\n${engine}\n</script>`
-);
+// Inline engine.js, replacing both <script> tags added for local dev
+const output = html
+  .replace('<script src="engine-core.js"></script>\n', '')
+  .replace(
+    '<script src="app.js"></script>',
+    `<script>\n${engine}\n</script>`
+  );
 
 writeFileSync(join(root, "index.html"), output, "utf8");
 console.log("✓ index.html built for GitHub Pages");

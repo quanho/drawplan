@@ -59,6 +59,9 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && url === "/app.js") {
     return serveFile(res, path.join(WEB_DIR, "app.js"), "text/javascript");
   }
+  if (req.method === "GET" && url === "/engine-core.js") {
+    return serveFile(res, path.join(WEB_DIR, "engine-core.js"), "text/javascript");
+  }
   if (req.method === "GET" && url === "/example.json") {
     return serveFile(res, path.join(WEB_DIR, "example.json"), "application/json");
   }
