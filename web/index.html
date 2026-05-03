@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DrawPlan — Vẽ mặt bằng</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --left-w: 360px;
+      --header-h: 44px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      background: #f1f5f9;
+      color: #1e293b;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: var(--header-h) 1fr;
+      overflow: hidden;
+    }
+
+    header {
+      background: #1e3a2f;
+      color: #f0fdf4;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 18px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    header span { opacity: .5; font-weight: 400; font-size: 12px; }
+    header a {
+      margin-left: auto;
+      color: #86efac;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    header a:hover { text-decoration: underline; }
+
+    main {
+      display: grid;
+      grid-template-columns: var(--left-w) 1fr;
+      overflow: hidden;
+    }
+
+    /* ── Left panel ─────────────────────────────────────── */
+    #left {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #d1fae5;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .panel-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #64748b;
+      padding: 8px 12px 6px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    #input {
+      flex: 1;
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 10px;
+      border: none;
+      resize: none;
+      outline: none;
+      color: #1e293b;
+      background: #f8fafc;
+    }
+
+    #toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 8px 10px;
+      border-top: 1px solid #e2e8f0;
+      background: #fff;
+    }
+
+    button {
+      padding: 5px 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background .15s;
+    }
+
+    #run {
+      background: #16a34a;
+      color: #fff;
+      flex: 1;
+    }
+    #run:hover { background: #15803d; }
+
+    #copy-svg {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+    #copy-svg:hover { background: #cbd5e1; }
+    #copy-svg.copied { background: #dcfce7; color: #166534; }
+
+    #export-html {
+      background: #0ea5e9;
+      color: #fff;
+    }
+    #export-html:hover { background: #0284c7; }
+    #export-html.done { background: #dcfce7; color: #166534; }
+
+    #measure {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+    #measure:hover { background: #cbd5e1; }
+    #measure.active { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+
+    #error-box {
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #b91c1c;
+      background: #fef2f2;
+      border-top: 1px solid #fecaca;
+      min-height: 28px;
+      max-height: 80px;
+      overflow-y: auto;
+    }
+
+    /* ── Right panel — SVG canvas ────────────────────────── */
+    #right {
+      overflow: hidden;
+      position: relative;
+      background: #fff;
+    }
+
+    #svg-wrap {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      cursor: grab;
+    }
+    #svg-wrap:active { cursor: grabbing; }
+    #svg-wrap svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Zoom controls ───────────────────────────────────── */
+    #zoom-controls {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .zoom-btn {
+      width: 30px;
+      height: 30px;
+      background: #fff;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 18px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,.1);
+      padding: 0;
+    }
+    .zoom-btn:hover { background: #f1f5f9; }
+
+    #unit-hint {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  🏡 DrawPlan <span>v1 — Vẽ mặt bằng theo kích thước thực</span>
+  <a href="/help" target="_blank">? Hướng dẫn</a>
+</header>
+
+<main>
+  <div id="left">
+    <div class="panel-title">
+      Mô tả mặt bằng (JSON)
+    </div>
+    <textarea id="input" spellcheck="false"></textarea>
+    <div id="error-box"></div>
+    <div id="toolbar">
+      <button id="run">▶ Vẽ</button>
+      <button id="copy-svg" data-label="Copy SVG">Copy SVG</button>
+      <button id="export-html" data-label="Xuất HTML">Xuất HTML</button>
+      <button id="measure" title="Đo khoảng cách (Esc để thoát)">📏 Đo</button>
+    </div>
+  </div>
+
+  <div id="right">
+    <div id="svg-wrap"></div>
+    <div id="zoom-controls">
+      <button class="zoom-btn" id="zoom-in">+</button>
+      <button class="zoom-btn" id="zoom-reset">⊙</button>
+      <button class="zoom-btn" id="zoom-out">−</button>
+    </div>
+    <div id="unit-hint"></div>
+  </div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hướng dẫn — DrawPlan</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      background: #f1f5f9;
+      color: #1e293b;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: 44px 1fr;
+    }
+
+    header {
+      background: #1e3a2f;
+      color: #f0fdf4;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 18px;
+      font-size: 15px;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header span { opacity: .5; font-weight: 400; font-size: 12px; }
+    header a {
+      margin-left: auto;
+      color: #86efac;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    header a:hover { text-decoration: underline; }
+
+    .content {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 36px 24px 80px;
+    }
+
+    h1 { font-size: 22px; font-weight: 700; color: #1e3a2f; margin-bottom: 6px; }
+    .subtitle { color: #64748b; font-size: 13px; margin-bottom: 36px; }
+
+    h2 {
+      font-size: 15px; font-weight: 700; color: #1e3a2f;
+      margin: 32px 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #d1fae5;
+    }
+    h3 { font-size: 13px; font-weight: 700; color: #374151; margin: 18px 0 6px; }
+
+    p { line-height: 1.7; margin-bottom: 10px; color: #374151; }
+    li { line-height: 1.7; color: #374151; margin-left: 20px; margin-bottom: 4px; }
+    ul, ol { margin-bottom: 10px; }
+
+    code {
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 12px;
+      background: #e2e8f0;
+      color: #1e293b;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      margin: 10px 0 18px;
+    }
+    pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+
+    .key { color: #7dd3fc; }
+    .str { color: #86efac; }
+    .num { color: #fbbf24; }
+    .cmt { color: #64748b; font-style: italic; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin: 10px 0 18px;
+    }
+    th {
+      background: #f0fdf4;
+      color: #1e3a2f;
+      font-weight: 700;
+      text-align: left;
+      padding: 8px 12px;
+      border: 1px solid #d1fae5;
+    }
+    td {
+      padding: 7px 12px;
+      border: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #f8fafc; }
+
+    .tip {
+      background: #f0fdf4;
+      border-left: 4px solid #16a34a;
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      margin: 10px 0 18px;
+      font-size: 13px;
+      color: #166534;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-blue  { background: #dbeafe; color: #1d4ed8; }
+    .badge-gray  { background: #e2e8f0; color: #475569; }
+  </style>
+</head>
+<body>
+
+<header>
+  🏡 DrawPlan <span>Hướng dẫn sử dụng</span>
+  <a href="/">← Quay lại ứng dụng</a>
+</header>
+
+<div class="content">
+  <h1>Hướng dẫn sử dụng DrawPlan</h1>
+  <p class="subtitle">Công cụ vẽ mặt bằng nhà/vườn theo kích thước thực, mô tả bằng JSON.</p>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <h2>1. Tổng quan</h2>
+  <p>DrawPlan nhận một tài liệu JSON mô tả mặt bằng, rồi vẽ ra sơ đồ SVG đúng tỉ lệ. Bạn nhập JSON vào ô bên trái, nhấn <strong>▶ Vẽ</strong>, sơ đồ hiện ra bên phải.</p>
+  <ul>
+    <li><strong>Pan</strong>: giữ chuột và kéo trên bản vẽ.</li>
+    <li><strong>Zoom</strong>: lăn chuột, hoặc dùng nút <code>+</code> / <code>−</code> / <code>⊙</code> góc phải dưới.</li>
+    <li><strong>Xuất HTML</strong>: tải về một file HTML độc lập (không cần server) có thể chia sẻ.</li>
+    <li><strong>Copy SVG</strong>: chép SVG vào clipboard để dán vào Inkscape, Figma, v.v.</li>
+  </ul>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <h2>2. Cấu trúc tài liệu JSON</h2>
+  <pre><code><span class="cmt">// Ví dụ tối giản</span>
+{
+  <span class="key">"version"</span>: <span class="str">"drawplan/v1"</span>,
+  <span class="key">"unit"</span>: <span class="str">"mm"</span>,          <span class="cmt">// "mm" | "cm" | "m"</span>
+  <span class="key">"plot"</span>: {
+    <span class="key">"width"</span>: <span class="num">60000</span>,     <span class="cmt">// chiều ngang mảnh đất</span>
+    <span class="key">"depth"</span>: <span class="num">22000</span>,     <span class="cmt">// chiều sâu (dọc)</span>
+    <span class="key">"label"</span>: <span class="str">"Mảnh đất"</span>
+  },
+  <span class="key">"dimensionOffset"</span>: <span class="num">0</span>,  <span class="cmt">// khoảng cách px từ hình đến đường kích thước</span>
+  <span class="key">"items"</span>: [ <span class="cmt">/* danh sách các hình */</span> ]
+}</code></pre>
+
+  <table>
+    <tr><th>Trường</th><th>Kiểu</th><th>Bắt buộc</th><th>Mô tả</th></tr>
+    <tr><td><code>version</code></td><td>string</td><td><span class="badge badge-gray">không</span></td><td>Phiên bản schema, hiện tại <code>"drawplan/v1"</code></td></tr>
+    <tr><td><code>unit</code></td><td><code>"mm"</code> / <code>"cm"</code> / <code>"m"</code></td><td><span class="badge badge-gray">không</span></td><td>Đơn vị mặc định cho tất cả kích thước. Mặc định: <code>"mm"</code></td></tr>
+    <tr><td><code>plot.width</code></td><td>number</td><td><span class="badge badge-green">bắt buộc</span></td><td>Chiều rộng mảnh đất</td></tr>
+    <tr><td><code>plot.depth</code></td><td>number</td><td><span class="badge badge-green">bắt buộc</span></td><td>Chiều sâu mảnh đất</td></tr>
+    <tr><td><code>plot.label</code></td><td>string</td><td><span class="badge badge-gray">không</span></td><td>Nhãn hiển thị trên mảnh đất</td></tr>
+    <tr><td><code>dimensionOffset</code></td><td>number</td><td><span class="badge badge-gray">không</span></td><td>Khoảng cách (px canvas) từ cạnh hình đến đường kích thước. Mặc định: <code>0</code></td></tr>
+    <tr><td><code>items</code></td><td>array</td><td><span class="badge badge-gray">không</span></td><td>Danh sách các hình: <code>rect</code>, <code>path</code>, <code>measure</code></td></tr>
+  </table>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <h2>3. Hình chữ nhật — <code>type: "rect"</code></h2>
+  <pre><code>{
+  <span class="key">"id"</span>: <span class="str">"house"</span>,
+  <span class="key">"type"</span>: <span class="str">"rect"</span>,
+  <span class="key">"label"</span>: <span class="str">"Nhà"</span>,
+  <span class="key">"x"</span>: <span class="num">31465</span>,          <span class="cmt">// tọa độ góc trái trên</span>
+  <span class="key">"y"</span>: <span class="num">4500</span>,
+  <span class="key">"width"</span>: <span class="num">21000</span>,
+  <span class="key">"height"</span>: <span class="num">8730</span>,
+  <span class="key">"style"</span>: <span class="str">"solid"</span>,     <span class="cmt">// "solid" | "dashed"</span>
+  <span class="key">"fill"</span>: <span class="str">"#e0f2fe"</span>,    <span class="cmt">// màu nền (CSS color)</span>
+  <span class="key">"stroke"</span>: <span class="str">"#1a7a3e"</span>, <span class="cmt">// màu viền</span>
+  <span class="key">"strokeWidth"</span>: <span class="num">400</span>,  <span class="cmt">// độ dày nét (cùng đơn vị với "unit")</span>
+  <span class="key">"labelRotation"</span>: <span class="num">0</span>,  <span class="cmt">// xoay nhãn, độ (0 = ngang)</span>
+  <span class="key">"showDimensions"</span>: <span class="str">true</span> <span class="cmt">// xem mục 5</span>
+}</code></pre>
+
+  <table>
+    <tr><th>Trường</th><th>Kiểu</th><th>Mô tả</th></tr>
+    <tr><td><code>x</code>, <code>y</code></td><td>number</td><td>Tọa độ góc trái trên (cùng đơn vị <code>unit</code>)</td></tr>
+    <tr><td><code>width</code>, <code>height</code></td><td>number</td><td>Kích thước</td></tr>
+    <tr><td><code>style</code></td><td><code>"solid"</code> / <code>"dashed"</code></td><td>Kiểu nét viền. Mặc định: <code>"solid"</code></td></tr>
+    <tr><td><code>fill</code></td><td>CSS color string</td><td>Màu nền. Mặc định: không tô (<code>"none"</code>)</td></tr>
+    <tr><td><code>stroke</code></td><td>CSS color string</td><td>Màu viền. Mặc định: <code>"#1a7a3e"</code></td></tr>
+    <tr><td><code>strokeWidth</code></td><td>number</td><td>Độ dày nét tính theo đơn vị <code>unit</code>. Ví dụ: đơn vị mm, <code>400</code> ≈ 4px trên canvas</td></tr>
+    <tr><td><code>labelRotation</code></td><td>number (độ)</td><td>Xoay nhãn. <code>90</code> = dọc. Nếu bỏ qua, tự động theo cạnh dài hơn</td></tr>
+    <tr><td><code>showDimensions</code></td><td>xem mục 5</td><td>Hiển thị đường kích thước</td></tr>
+  </table>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <h2>4. Đường gấp khúc — <code>type: "path"</code></h2>
+  <pre><code>{
+  <span class="key">"id"</span>: <span class="str">"fence"</span>,
+  <span class="key">"type"</span>: <span class="str">"path"</span>,
+  <span class="key">"label"</span>: <span class="str">"Hàng rào"</span>,
+  <span class="key">"points"</span>: [
+    [<span class="num">0</span>, <span class="num">0</span>], [<span class="num">10000</span>, <span class="num">0</span>], [<span class="num">10000</span>, <span class="num">5000</span>]
+  ],
+  <span class="key">"stroke"</span>: <span class="str">"#94a3b8"</span>,
+  <span class="key">"strokeWidth"</span>: <span class="num">200</span>,
+  <span class="key">"style"</span>: <span class="str">"dashed"</span>
+}</code></pre>
+  <p><code>points</code> là mảng các điểm <code>[x, y]</code>. Vẽ các đoạn thẳng nối nhau, không tự đóng.</p>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <h2>5. Đường đo khoảng cách — <code>type: "measure"</code></h2>
+  <pre><code>{
+  <span class="key">"id"</span>: <span class="str">"gap1"</span>,
+  <span class="key">"type"</span>: <span class="str">"measure"</span>,
+  <span class="key">"from"</span>: [<span class="num">0</span>, <span class="num">1125</span>],
+  <span class="key">"to"</span>:   [<span class="num">1125</span>, <span class="num">1125</span>],
+  <span class="key">"label"</span>: <span class="str">"1125 mm"</span>,  <span class="cmt">// bỏ qua để tự tính</span>
+  <span class="key">"offset"</span>: <span class="num">0</span>,           <span class="cmt">// dịch chuyển vuông góc (px)</span>
+  <span class="key">"stroke"</span>: <span class="str">"#888"</span>,
+  <span class="key">"labelPos"</span>: <span class="str">"outer"</span>   <span class="cmt">// "outer" (trên đường) | "inner" (dưới đường)</span>
+}</code></pre>
+  <p>Vẽ đường mũi tên hai đầu giữa hai điểm tùy ý. Nếu bỏ <code>label</code>, khoảng cách được tính tự động theo đơn vị của tài liệu.</p>
+
+  <table>
+    <tr><th>Trường</th><th>Kiểu</th><th>Mô tả</th></tr>
+    <tr><td><code>from</code>, <code>to</code></td><td>[x, y]</td><td>Hai điểm đầu và cuối</td></tr>
+    <tr><td><code>label</code></td><td>string</td><td>Nhãn tuỳ chỉnh. Bỏ qua để tự tính khoảng cách</td></tr>
+    <tr><td><code>offset</code></td><td>number (px)</td><td>Dịch đường đo ra ngoài vuông góc. Mặc định: <code>0</code></td></tr>
+    <tr><td><code>stroke</code></td><td>CSS color</td><td>Màu đường và nhãn. Mặc định: <code>"#888"</code></td></tr>
+    <tr><td><code>labelPos</code></td><td><code>"outer"</code> / <code>"inner"</code></td><td>Vị trí nhãn so với đường. Mặc định: <code>"outer"</code> (phía trên)</td></tr>
+  </table>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <h2>6. Đường kích thước — <code>showDimensions</code></h2>
+  <p>Áp dụng cho <code>rect</code>. Điều khiển đường kích thước hiện trên cạnh nào và nhãn đặt ở đâu.</p>
+
+  <h3>Các dạng giá trị</h3>
+  <table>
+    <tr><th>Giá trị</th><th>Ý nghĩa</th></tr>
+    <tr><td><code>true</code> (mặc định)</td><td>Hiện cạnh <code>top</code> và <code>right</code>, nhãn phía ngoài</td></tr>
+    <tr><td><code>false</code></td><td>Ẩn tất cả đường kích thước</td></tr>
+    <tr><td><code>["bottom", "left"]</code></td><td>Hiện <strong>đúng</strong> các cạnh liệt kê, nhãn outer</td></tr>
+    <tr><td><code>{ "bottom": true }</code></td><td>Merge vào mặc định: <strong>top + right + bottom</strong></td></tr>
+    <tr><td><code>{ "top": false }</code></td><td>Merge vào mặc định: ẩn top → chỉ còn <strong>right</strong></td></tr>
+    <tr><td><code>{ "bottom": { "labelPos": "outer" } }</code></td><td>Merge: thêm bottom với labelPos chỉ định</td></tr>
+  </table>
+
+  <div class="tip">
+    <strong>Lưu ý về record form <code>{ }</code>:</strong> Luôn bắt đầu từ mặc định <code>top + right</code>, rồi áp override.
+    Dùng <code>false</code> để ẩn một cạnh, <code>true</code> hoặc <code>{ labelPos }</code> để thêm/thay đổi cạnh.
+    Dạng array <code>[ ]</code> thay thế hoàn toàn, không merge.
+  </div>
+
+  <h3>Vị trí nhãn — <code>labelPos</code></h3>
+  <table>
+    <tr><th>Cạnh</th><th><code>"outer"</code> (xa shape)</th><th><code>"inner"</code> (gần shape)</th></tr>
+    <tr><td><code>top</code></td><td>Nhãn phía trên đường</td><td>Nhãn phía dưới đường</td></tr>
+    <tr><td><code>bottom</code></td><td>Nhãn phía dưới đường</td><td>Nhãn phía trên đường</td></tr>
+    <tr><td><code>left</code></td><td>Nhãn bên trái đường</td><td>Nhãn bên phải đường</td></tr>
+    <tr><td><code>right</code></td><td>Nhãn bên phải đường</td><td>Nhãn bên trái đường</td></tr>
+  </table>
+
+  <pre><code><span class="cmt">// Record form — merge vào top+right mặc định</span>
+<span class="cmt">// Thêm bottom (outer), giữ top+right</span>
+<span class="key">"showDimensions"</span>: { <span class="key">"bottom"</span>: { <span class="key">"labelPos"</span>: <span class="str">"outer"</span> } }
+
+<span class="cmt">// Ẩn top, thêm left → chỉ còn right + left</span>
+<span class="key">"showDimensions"</span>: { <span class="key">"top"</span>: <span class="str">false</span>, <span class="key">"left"</span>: <span class="str">true</span> }
+
+<span class="cmt">// 4 cạnh tuỳ chỉnh hoàn toàn bằng array (thay thế, không merge)</span>
+<span class="key">"showDimensions"</span>: [<span class="str">"top"</span>, <span class="str">"left"</span>]
+
+<span class="cmt">// Ẩn tất cả</span>
+<span class="key">"showDimensions"</span>: <span class="str">false</span></code></pre>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <h2>8. Nhãn hình chữ nhật — <code>labelRotation</code></h2>
+  <p>Nhãn tự động xoay theo cạnh dài hơn của hình:</p>
+  <table>
+    <tr><th>Trường hợp</th><th>Góc mặc định</th></tr>
+    <tr><td><code>width &gt; height</code> (hình ngang)</td><td><code>0°</code> — nằm ngang</td></tr>
+    <tr><td><code>height &gt; width</code> (hình đứng)</td><td><code>90°</code> — xoay dọc</td></tr>
+  </table>
+  <p>Để override, thêm <code>"labelRotation"</code> với bất kỳ góc nào (kể cả <code>0</code> để ép ngang dù hình đứng):</p>
+  <pre><code><span class="key">"labelRotation"</span>: <span class="num">0</span>   <span class="cmt">// ép ngang</span>
+<span class="key">"labelRotation"</span>: <span class="num">90</span>  <span class="cmt">// ép dọc</span>
+<span class="key">"labelRotation"</span>: <span class="num">45</span>  <span class="cmt">// chéo 45°</span></code></pre>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <h2>9. Đơn vị và quy đổi</h2>
+  <p>Tất cả số đo trong JSON dùng chung đơn vị <code>unit</code> khai báo ở gốc tài liệu. Riêng <code>strokeWidth</code> cũng theo đơn vị đó.</p>
+  <table>
+    <tr><th>unit</th><th>Ví dụ strokeWidth 4px</th><th>Ghi chú</th></tr>
+    <tr><td><code>"mm"</code></td><td>~300–500 (tùy tỉ lệ)</td><td>Bản vẽ rộng 60 m → 1 mm ≈ 0.02 px</td></tr>
+    <tr><td><code>"cm"</code></td><td>~30–50</td><td></td></tr>
+    <tr><td><code>"m"</code></td><td>~0.3–0.5</td><td></td></tr>
+  </table>
+  <div class="tip">
+    Để có nét đậm hơn bình thường, hãy thử tăng <code>strokeWidth</code> và xem kết quả trực tiếp trên bản vẽ.
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <h2>10. Ví dụ đầy đủ</h2>
+  <pre><code>{
+  <span class="key">"version"</span>: <span class="str">"drawplan/v1"</span>,
+  <span class="key">"unit"</span>: <span class="str">"mm"</span>,
+  <span class="key">"plot"</span>: { <span class="key">"width"</span>: <span class="num">59360</span>, <span class="key">"depth"</span>: <span class="num">21940</span>, <span class="key">"label"</span>: <span class="str">"Mảnh đất"</span> },
+  <span class="key">"dimensionOffset"</span>: <span class="num">0</span>,
+  <span class="key">"items"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="str">"house"</span>, <span class="key">"label"</span>: <span class="str">"Nhà"</span>, <span class="key">"type"</span>: <span class="str">"rect"</span>,
+      <span class="key">"x"</span>: <span class="num">31465</span>, <span class="key">"y"</span>: <span class="num">4500</span>, <span class="key">"width"</span>: <span class="num">21000</span>, <span class="key">"height"</span>: <span class="num">8730</span>,
+      <span class="key">"style"</span>: <span class="str">"solid"</span>, <span class="key">"fill"</span>: <span class="str">"#f0fdf4"</span>, <span class="key">"strokeWidth"</span>: <span class="num">400</span>,
+      <span class="key">"showDimensions"</span>: [<span class="str">"top"</span>, <span class="str">"right"</span>]
+    },
+    {
+      <span class="key">"id"</span>: <span class="str">"garden"</span>, <span class="key">"label"</span>: <span class="str">"Sân vườn"</span>, <span class="key">"type"</span>: <span class="str">"rect"</span>,
+      <span class="key">"x"</span>: <span class="num">0</span>, <span class="key">"y"</span>: <span class="num">0</span>, <span class="key">"width"</span>: <span class="num">31465</span>, <span class="key">"height"</span>: <span class="num">21940</span>,
+      <span class="key">"style"</span>: <span class="str">"dashed"</span>, <span class="key">"fill"</span>: <span class="str">"#f0fdf4"</span>,
+      <span class="key">"showDimensions"</span>: {
+        <span class="key">"bottom"</span>: { <span class="key">"labelPos"</span>: <span class="str">"outer"</span> },
+        <span class="key">"left"</span>:   { <span class="key">"labelPos"</span>: <span class="str">"outer"</span> }
+      }
+    },
+    {
+      <span class="key">"id"</span>: <span class="str">"gap"</span>, <span class="key">"type"</span>: <span class="str">"measure"</span>,
+      <span class="key">"from"</span>: [<span class="num">0</span>, <span class="num">0</span>], <span class="key">"to"</span>: [<span class="num">0</span>, <span class="num">1125</span>]
+    }
+  ]
+}</code></pre>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <h2>11. Phím tắt &amp; thao tác</h2>
+  <table>
+    <tr><th>Thao tác</th><th>Mô tả</th></tr>
+    <tr><td>Kéo chuột trên bản vẽ</td><td>Di chuyển (pan)</td></tr>
+    <tr><td>Lăn chuột</td><td>Phóng to / thu nhỏ</td></tr>
+    <tr><td>Nút <code>⊙</code></td><td>Đặt lại zoom về mặc định</td></tr>
+    <tr><td><strong>▶ Vẽ</strong></td><td>Biên dịch JSON và vẽ lại bản đồ</td></tr>
+    <tr><td><strong>Xuất HTML</strong></td><td>Tải file HTML độc lập (không cần server)</td></tr>
+    <tr><td><strong>Copy SVG</strong></td><td>Chép mã SVG vào clipboard</td></tr>
+  </table>
+
+</div>
+</body>
+</html>
