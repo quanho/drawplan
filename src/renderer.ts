@@ -60,13 +60,15 @@ function hDimLine(x1: number, x2: number, y: number, label: string, textBelow = 
 function vDimLine(y1: number, y2: number, x: number, label: string, textRight = false): string {
   if (Math.abs(y2 - y1) < 1) return "";
   const mid = (y1 + y2) / 2;
-  const tx = textRight ? x + 14 : x - 6;
+  // After rotate(90): local +y maps to screen -x (leftward), so:
+  //   textRight=false → dy=+10 shifts left;  textRight=true → dy=-10 shifts right
+  const labelDy = textRight ? -10 : 10;
   return `
   <g class="dim-line">
     <line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="#888" stroke-width="1" marker-start="url(#arrow-start)" marker-end="url(#arrow-end)" />
     <line x1="${x - 8}" y1="${y1}" x2="${x + 8}" y2="${y1}" stroke="#888" stroke-width="1" />
     <line x1="${x - 8}" y1="${y2}" x2="${x + 8}" y2="${y2}" stroke="#888" stroke-width="1" />
-    <text x="${tx}" y="${mid}" text-anchor="middle" font-size="11" fill="#555" font-family="monospace" transform="rotate(-90,${tx},${mid})">${esc(label)}</text>
+    <text x="${x}" y="${mid}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="#555" font-family="monospace" transform="rotate(90,${x},${mid})" dy="${labelDy}">${esc(label)}</text>
   </g>`;
 }
 
