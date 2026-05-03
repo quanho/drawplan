@@ -12,6 +12,7 @@ const unitHint   = document.getElementById("unit-hint");
 const zoomIn   = document.getElementById("zoom-in");
 const zoomOut  = document.getElementById("zoom-out");
 const zoomReset= document.getElementById("zoom-reset");
+const rotateCcw= document.getElementById("rotate-ccw");
 
 // ── Measure tool state ────────────────────────────────────────────────────────
 let measureMode = false;
@@ -213,6 +214,32 @@ zoomOut.addEventListener("click", () => {
 });
 zoomReset.addEventListener("click", resetView);
 
+// ── Rotate CCW ────────────────────────────────────────────────────────────────
+let svgRotation = 0;
+
+function wrapSvgContent() {
+  const svg = getSvg();
+  if (!svg) return;
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.id = "rotation-group";
+  while (svg.firstChild) g.appendChild(svg.firstChild);
+  svg.appendChild(g);
+}
+
+function applySvgRotation() {
+  const svg = getSvg();
+  if (!svg) return;
+  const g = svg.querySelector("#rotation-group");
+  if (!g) return;
+  const cx = lastSvgW / 2, cy = lastSvgH / 2;
+  g.setAttribute("transform", `rotate(${svgRotation}, ${cx}, ${cy})`);
+}
+
+rotateCcw.addEventListener("click", () => {
+  svgRotation = (svgRotation - 90 + 360) % 360;
+  applySvgRotation();
+});
+
 // ── Render ─────────────────────────────────────────────────────────────────────
 function renderLocal(doc) {
   // Dùng compile/renderSvg từ engine-core.js (nếu có) hoặc engine.js
@@ -251,6 +278,8 @@ runBtn.addEventListener("click", async () => {
 
   svgWrap.innerHTML = svgStr;
   currentDoc = doc;
+  svgRotation = 0;
+  wrapSvgContent();
   clearMeasureOverlay();
 
   const svg = getSvg();

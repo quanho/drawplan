@@ -205,12 +205,13 @@ function renderSvg(scene) {
   for (const shape of scene.shapes) body += renderShape(shape, scale, offX, offY, scene.unit, dimOffset);
 
   // ── Compass labels ────────────────────────────────────────────────────────
-  const cx = CANVAS_W/2, cy = CANVAS_H/2;
+  const compassGap = dimOffset + 36;
   const cs = `font-size="13" fill="#888" font-family="sans-serif" font-weight="600" letter-spacing="1"`;
-  body += `<text x="${cx}" y="16" text-anchor="middle" dominant-baseline="hanging" ${cs}>N</text>`;
-  body += `<text x="${cx}" y="${CANVAS_H-6}" text-anchor="middle" dominant-baseline="auto" ${cs}>S</text>`;
-  body += `<text x="8" y="${cy}" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90,8,${cy})" ${cs}>W</text>`;
-  body += `<text x="${CANVAS_W-8}" y="${cy}" text-anchor="middle" dominant-baseline="middle" transform="rotate(90,${CANVAS_W-8},${cy})" ${cs}>E</text>`;
+  const midX = offX + totalW/2, midY = offY + totalH/2;
+  body += `<text x="${midX}" y="${offY - compassGap}" text-anchor="middle" dominant-baseline="auto" ${cs}>N</text>`;
+  body += `<text x="${midX}" y="${offY + totalH + compassGap}" text-anchor="middle" dominant-baseline="hanging" ${cs}>S</text>`;
+  body += `<text x="${offX - compassGap}" y="${midY}" text-anchor="end" dominant-baseline="middle" ${cs}>W</text>`;
+  body += `<text x="${offX + totalW + compassGap}" y="${midY}" text-anchor="start" dominant-baseline="middle" ${cs}>E</text>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${CANVAS_W}" height="${CANVAS_H}" viewBox="0 0 ${CANVAS_W} ${CANVAS_H}">${DEFS}${body}</svg>`;
 }
