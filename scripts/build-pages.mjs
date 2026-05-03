@@ -12,15 +12,16 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 
-const html   = readFileSync(join(root, "web", "index.html"), "utf8");
-const engine = readFileSync(join(root, "web", "engine.js"), "utf8");
+const html       = readFileSync(join(root, "web", "index.html"), "utf8");
+const engineCore = readFileSync(join(root, "web", "engine-core.js"), "utf8");
+const app        = readFileSync(join(root, "web", "app.js"), "utf8");
 
-// Strip the inline engine-core block (lines between <script> and </script> before app.js)
-// then replace <script src="app.js"> with the full engine.js (which includes compile+render+UI)
+// Strip the inline engine-core block (between first <script> and </script>)
+// then replace <script src="app.js"> with combined engine-core + app
 const stripped = html.replace(/<script>\n[\s\S]*?<\/script>\n/, '');
 const output = stripped.replace(
   '<script src="app.js"></script>',
-  `<script>\n${engine}\n</script>`
+  `<script>\n${engineCore}\n${app}\n</script>`
 );
 
 writeFileSync(join(root, "index.html"), output, "utf8");
