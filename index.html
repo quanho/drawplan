@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DrawPlan — Vẽ mặt bằng</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --left-w: 360px; --header-h: 44px; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px; background: #f1f5f9; color: #1e293b;
+      height: 100vh; display: grid; grid-template-rows: var(--header-h) 1fr; overflow: hidden;
+    }
+    header {
+      background: #1e3a2f; color: #f0fdf4;
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 18px; font-size: 15px; font-weight: 600;
+    }
+    header span { opacity: .5; font-weight: 400; font-size: 12px; }
+    main { display: grid; grid-template-columns: var(--left-w) 1fr; overflow: hidden; }
+    #left {
+      display: flex; flex-direction: column;
+      border-right: 1px solid #d1fae5; background: #fff; overflow: hidden;
+    }
+    .panel-title {
+      font-size: 11px; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase; color: #64748b;
+      padding: 8px 12px 6px; border-bottom: 1px solid #e2e8f0;
+    }
+    #input {
+      flex: 1; font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 12px; line-height: 1.5; padding: 10px;
+      border: none; resize: none; outline: none;
+      color: #1e293b; background: #f8fafc;
+    }
+    #toolbar {
+      display: flex; gap: 8px; padding: 8px 10px;
+      border-top: 1px solid #e2e8f0; background: #fff;
+    }
+    button {
+      padding: 5px 14px; border: none; border-radius: 6px;
+      cursor: pointer; font-size: 13px; font-weight: 600; transition: background .15s;
+    }
+    #run { background: #16a34a; color: #fff; flex: 1; }
+    #run:hover { background: #15803d; }
+    #export-html { background: #0ea5e9; color: #fff; }
+    #export-html:hover { background: #0284c7; }
+    #export-html.done { background: #dcfce7; color: #166534; }
+    #measure { background: #e2e8f0; color: #1e293b; }
+    #measure:hover { background: #cbd5e1; }
+    #measure.active { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    #error-box {
+      padding: 8px 10px; font-size: 12px; color: #b91c1c;
+      background: #fef2f2; border-top: 1px solid #fecaca;
+      min-height: 28px; max-height: 80px; overflow-y: auto;
+    }
+    #right { overflow: hidden; position: relative; background: #fff; }
+    #svg-wrap { width: 100%; height: 100%; overflow: hidden; cursor: grab; }
+    #svg-wrap:active { cursor: grabbing; }
+    #svg-wrap svg { display: block; width: 100%; height: 100%; }
+    #zoom-controls {
+      position: absolute; bottom: 16px; right: 16px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .zoom-btn {
+      width: 30px; height: 30px; background: #fff;
+      border: 1px solid #d1d5db; border-radius: 6px;
+      font-size: 18px; display: flex; align-items: center;
+      justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.1); padding: 0;
+    }
+    .zoom-btn:hover { background: #f1f5f9; }
+    #unit-hint { position: absolute; bottom: 16px; left: 16px; font-size: 11px; color: #94a3b8; }
+
+    /* ── Help modal ────────────────────────────────────── */
+    #help-btn {
+      margin-left: auto; background: transparent; border: 1px solid rgba(255,255,255,.3);
+      color: #86efac; font-size: 13px; font-weight: 600; padding: 3px 12px;
+      border-radius: 5px; cursor: pointer;
+    }
+    #help-btn:hover { background: rgba(255,255,255,.1); }
+    #help-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      z-index: 100; align-items: center; justify-content: center;
+    }
+    #help-overlay.open { display: flex; }
+    #help-box {
+      background: #fff; border-radius: 10px; width: min(820px, 95vw);
+      max-height: 90vh; overflow-y: auto; padding: 28px 32px 40px;
+      position: relative; font-size: 13px; line-height: 1.7; color: #1e293b;
+    }
+    #help-close {
+      position: absolute; top: 14px; right: 16px;
+      background: #e2e8f0; border: none; border-radius: 5px;
+      padding: 3px 10px; font-size: 13px; cursor: pointer;
+    }
+    #help-close:hover { background: #cbd5e1; }
+    #help-box h1 { font-size: 20px; font-weight: 700; color: #1e3a2f; margin-bottom: 4px; }
+    #help-box .sub { color: #64748b; font-size: 12px; margin-bottom: 28px; }
+    #help-box h2 {
+      font-size: 14px; font-weight: 700; color: #1e3a2f;
+      margin: 26px 0 8px; padding-bottom: 5px; border-bottom: 2px solid #d1fae5;
+    }
+    #help-box h3 { font-size: 12px; font-weight: 700; color: #374151; margin: 14px 0 5px; }
+    #help-box p { margin-bottom: 8px; color: #374151; }
+    #help-box li { margin-left: 18px; margin-bottom: 3px; color: #374151; }
+    #help-box code {
+      font-family: "SF Mono", "Fira Code", Consolas, monospace; font-size: 11px;
+      background: #e2e8f0; padding: 1px 5px; border-radius: 3px;
+    }
+    #help-box pre {
+      background: #0f172a; color: #e2e8f0; border-radius: 7px;
+      padding: 14px 16px; overflow-x: auto; margin: 8px 0 16px;
+      font-family: "SF Mono", "Fira Code", Consolas, monospace; font-size: 11px; line-height: 1.6;
+    }
+    #help-box pre code { background: none; color: inherit; padding: 0; }
+    #help-box .k { color: #7dd3fc; } #help-box .s { color: #86efac; }
+    #help-box .n { color: #fbbf24; } #help-box .c { color: #64748b; font-style: italic; }
+    #help-box table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 8px 0 16px; }
+    #help-box th { background: #f0fdf4; color: #1e3a2f; font-weight: 700; text-align: left; padding: 7px 10px; border: 1px solid #d1fae5; }
+    #help-box td { padding: 6px 10px; border: 1px solid #e2e8f0; vertical-align: top; }
+    #help-box tr:nth-child(even) td { background: #f8fafc; }
+    #help-box .tip {
+      background: #f0fdf4; border-left: 4px solid #16a34a;
+      padding: 9px 12px; border-radius: 0 6px 6px 0;
+      margin: 8px 0 16px; font-size: 12px; color: #166534;
+    }
+  </style>
+</head>
+<body>
+<header>🏡 DrawPlan <span>v1 — Vẽ mặt bằng theo kích thước thực · Standalone</span>
+  <button id="help-btn">? Hướng dẫn</button>
+</header>
+
+<!-- ── Help modal ──────────────────────────────────────────────────────── -->
+<div id="help-overlay">
+<div id="help-box">
+  <button id="help-close">✕ Đóng</button>
+  <h1>Hướng dẫn sử dụng DrawPlan</h1>
+  <p class="sub">Công cụ vẽ mặt bằng nhà/vườn theo kích thước thực, mô tả bằng JSON.</p>
+
+  <h2>1. Tổng quan</h2>
+  <p>Nhập JSON vào ô bên trái, nhấn <strong>▶ Vẽ</strong>, sơ đồ hiện ra bên phải.</p>
+  <ul>
+    <li><strong>Pan</strong>: giữ chuột và kéo trên bản vẽ.</li>
+    <li><strong>Zoom</strong>: lăn chuột, hoặc dùng nút <code>+</code> / <code>−</code> / <code>⊙</code>.</li>
+    <li><strong>Xuất hình HTML</strong>: tải về file HTML độc lập để chia sẻ.</li>
+  </ul>
+
+  <h2>2. Cấu trúc tài liệu</h2>
+  <pre><code><span class="c">// Cấu trúc tối giản</span>
+{
+  <span class="k">"version"</span>: <span class="s">"drawplan/v1"</span>,
+  <span class="k">"unit"</span>: <span class="s">"mm"</span>,          <span class="c">// "mm" | "cm" | "m"</span>
+  <span class="k">"plot"</span>: {
+    <span class="k">"width"</span>: <span class="n">60000</span>,     <span class="c">// chiều ngang mảnh đất</span>
+    <span class="k">"depth"</span>: <span class="n">22000</span>,     <span class="c">// chiều sâu (dọc)</span>
+    <span class="k">"label"</span>: <span class="s">"Mảnh đất"</span>
+  },
+  <span class="k">"dimensionOffset"</span>: <span class="n">0</span>,  <span class="c">// khoảng cách px từ hình đến đường kích thước</span>
+  <span class="k">"items"</span>: [ <span class="c">/* danh sách hình */</span> ]
+}</code></pre>
+
+  <h2>3. Hình chữ nhật — <code>type: "rect"</code></h2>
+  <pre><code>{
+  <span class="k">"id"</span>: <span class="s">"house"</span>, <span class="k">"type"</span>: <span class="s">"rect"</span>, <span class="k">"label"</span>: <span class="s">"Nhà"</span>,
+  <span class="k">"x"</span>: <span class="n">8710</span>, <span class="k">"y"</span>: <span class="n">31465</span>, <span class="k">"width"</span>: <span class="n">8730</span>, <span class="k">"height"</span>: <span class="n">21000</span>,
+  <span class="k">"style"</span>: <span class="s">"solid"</span>,       <span class="c">// "solid" | "dashed"</span>
+  <span class="k">"fill"</span>: <span class="s">"#e0f2fe"</span>,    <span class="c">// màu nền CSS</span>
+  <span class="k">"stroke"</span>: <span class="s">"#1a7a3e"</span>, <span class="c">// màu viền, "none" = không viền</span>
+  <span class="k">"strokeWidth"</span>: <span class="n">150</span>,   <span class="c">// độ dày nét (cùng đơn vị "unit")</span>
+  <span class="k">"labelRotation"</span>: <span class="n">0</span>,   <span class="c">// góc xoay nhãn (tự động nếu bỏ qua)</span>
+  <span class="k">"showDimensions"</span>: <span class="s">true</span> <span class="c">// xem mục 6</span>
+}</code></pre>
+  <table>
+    <tr><th>Trường</th><th>Mô tả</th></tr>
+    <tr><td><code>stroke: "none"</code></td><td>Không vẽ viền</td></tr>
+    <tr><td><code>strokeWidth</code></td><td>Độ dày nét theo đơn vị <code>unit</code>. VD: mm, <code>150</code> ≈ 1.5px</td></tr>
+    <tr><td><code>labelRotation</code></td><td>Tự động: 90° nếu hình đứng, 0° nếu ngang. Override bằng số bất kỳ.</td></tr>
+  </table>
+
+  <h2>4. Đường gấp khúc — <code>type: "path"</code></h2>
+  <pre><code>{
+  <span class="k">"id"</span>: <span class="s">"fence"</span>, <span class="k">"type"</span>: <span class="s">"path"</span>,
+  <span class="k">"points"</span>: [[<span class="n">0</span>,<span class="n">0</span>],[<span class="n">10000</span>,<span class="n">0</span>],[<span class="n">10000</span>,<span class="n">5000</span>]],
+  <span class="k">"stroke"</span>: <span class="s">"#94a3b8"</span>, <span class="k">"strokeWidth"</span>: <span class="n">200</span>, <span class="k">"style"</span>: <span class="s">"dashed"</span>
+}</code></pre>
+
+  <h2>5. Đường đo — <code>type: "measure"</code></h2>
+  <pre><code>{
+  <span class="k">"id"</span>: <span class="s">"gap1"</span>, <span class="k">"type"</span>: <span class="s">"measure"</span>,
+  <span class="k">"from"</span>: [<span class="n">0</span>, <span class="n">0</span>], <span class="k">"to"</span>: [<span class="n">1125</span>, <span class="n">0</span>],
+  <span class="k">"label"</span>: <span class="s">"1125 mm"</span>,  <span class="c">// bỏ qua để tự tính</span>
+  <span class="k">"offset"</span>: <span class="n">0</span>,           <span class="c">// dịch vuông góc (px)</span>
+  <span class="k">"stroke"</span>: <span class="s">"#888"</span>,
+  <span class="k">"labelPos"</span>: <span class="s">"outer"</span>   <span class="c">// "outer" = trên đường | "inner" = dưới đường</span>
+}</code></pre>
+
+  <h2>6. Đường kích thước — <code>showDimensions</code></h2>
+  <p>Mặc định: hiện cạnh <code>top</code> và <code>right</code>. Record form <code>{ }</code> merge vào mặc định.</p>
+  <table>
+    <tr><th>Giá trị</th><th>Ý nghĩa</th></tr>
+    <tr><td><code>true</code></td><td>top + right, outer (mặc định)</td></tr>
+    <tr><td><code>false</code></td><td>Ẩn tất cả</td></tr>
+    <tr><td><code>["bottom","left"]</code></td><td>Chỉ các cạnh liệt kê (thay thế hoàn toàn)</td></tr>
+    <tr><td><code>{"bottom": true}</code></td><td>Merge: top + right + bottom</td></tr>
+    <tr><td><code>{"top": false}</code></td><td>Merge: ẩn top → chỉ còn right</td></tr>
+    <tr><td><code>{"right": {"labelPos": "inner"}}</code></td><td>Merge: right với nhãn phía trong</td></tr>
+  </table>
+  <h3>Vị trí nhãn — <code>labelPos</code></h3>
+  <table>
+    <tr><th>Cạnh</th><th><code>"outer"</code></th><th><code>"inner"</code></th></tr>
+    <tr><td><code>top</code></td><td>Trên đường</td><td>Dưới đường</td></tr>
+    <tr><td><code>bottom</code></td><td>Dưới đường</td><td>Trên đường</td></tr>
+    <tr><td><code>left</code></td><td>Trái đường</td><td>Phải đường</td></tr>
+    <tr><td><code>right</code></td><td>Phải đường</td><td>Trái đường</td></tr>
+  </table>
+  <pre><code><span class="c">// Ví dụ đầy đủ</span>
+<span class="k">"showDimensions"</span>: {
+  <span class="k">"top"</span>:    { <span class="k">"labelPos"</span>: <span class="s">"inner"</span> },
+  <span class="k">"bottom"</span>: { <span class="k">"labelPos"</span>: <span class="s">"outer"</span> },
+  <span class="k">"right"</span>:  <span class="s">false</span>
+}</code></pre>
+
+  <h2>7. Đơn vị</h2>
+  <div class="tip">Tất cả số đo dùng chung <code>unit</code> (mm/cm/m). <code>strokeWidth</code> cũng theo đơn vị đó. VD: unit mm, bản vẽ 60m → <code>strokeWidth: 150</code> ≈ 1.5px canvas.</div>
+
+  <h2>8. Phím tắt</h2>
+  <table>
+    <tr><th>Thao tác</th><th>Mô tả</th></tr>
+    <tr><td>Kéo chuột</td><td>Di chuyển (pan)</td></tr>
+    <tr><td>Lăn chuột</td><td>Zoom</td></tr>
+    <tr><td>Nút ⊙</td><td>Đặt lại zoom</td></tr>
+    <tr><td>▶ Vẽ</td><td>Render JSON</td></tr>
+    <tr><td>Xuất hình HTML</td><td>Tải file HTML chia sẻ được</td></tr>
+  </table>
+</div>
+</div>
+<main>
+  <div id="left">
+    <div class="panel-title">Mô tả mặt bằng (JSON)</div>
+    <textarea id="input" spellcheck="false"></textarea>
+    <div id="error-box"></div>
+    <div id="toolbar">
+      <button id="run">▶ Vẽ</button>
+      <button id="export-html" data-label="Xuất hình HTML">Xuất hình HTML</button>
+      <button id="measure" title="Đo khoảng cách (Esc để thoát)">📏 Đo</button>
+    </div>
+  </div>
+  <div id="right">
+    <div id="svg-wrap"></div>
+    <div id="zoom-controls">
+      <button class="zoom-btn" id="zoom-in">+</button>
+      <button class="zoom-btn" id="zoom-reset">⊙</button>
+      <button class="zoom-btn" id="zoom-out">−</button>
+    </div>
+    <div id="unit-hint"></div>
+  </div>
+</main>
+
+<script>
+// ── Compiler (ported from compiler.ts) ────────────────────────────────────────
+function toMm(value, unit) {
+  if (unit === "m")  return value * 1000;
+  if (unit === "cm") return value * 10;
+  return value; // mm
+}
+
+function resolveDimSides(spec) {
+  const defaults = [
+    { side: "top", labelPos: "outer" },
+    { side: "right", labelPos: "outer" },
+  ];
+  if (spec === false) return [];
+  if (spec === true || spec === undefined)
+    return defaults.map(e => ({ ...e }));
+  if (Array.isArray(spec))
+    return spec.map(s => ({ side: s, labelPos: "outer" }));
+  // Record form: merge vào default (top+right). false = ẩn, true/config = thêm/override
+  const map = new Map(defaults.map(e => [e.side, { ...e }]));
+  for (const [side, cfg] of Object.entries(spec)) {
+    if (cfg === false) { map.delete(side); }
+    else {
+      map.set(side, {
+        side,
+        labelPos: (cfg === true || !cfg.labelPos) ? "outer" : cfg.labelPos,
+      });
+    }
+  }
+  return Array.from(map.values());
+}
+
+function compileRect(item, unit) {
+  return {
+    kind: "rect", id: item.id, label: item.label,
+    x: toMm(item.x, unit), y: toMm(item.y, unit),
+    w: toMm(item.width, unit), h: toMm(item.height, unit),
+    stroke: item.stroke ?? "#1a7a3e",
+    strokeWidth: item.strokeWidth != null ? toMm(item.strokeWidth, unit) : -1,
+    strokeDash: item.style === "dashed" ? "8,5" : undefined,
+    fill: item.fill ?? "none",
+    labelRotation: item.labelRotation,
+    dimSides: resolveDimSides(item.showDimensions),
+  };
+}
+
+function compilePath(item, unit) {
+  return {
+    kind: "path", id: item.id, label: item.label,
+    points: item.points.map(([x, y]) => [toMm(x, unit), toMm(y, unit)]),
+    stroke: item.stroke ?? "#555",
+    strokeDash: item.style === "dashed" ? "8,5" : undefined,
+    strokeWidth: toMm(item.strokeWidth ?? 200, unit),
+  };
+}
+
+function compileMeasure(item, unit) {
+  const [x1,y1] = [toMm(item.from[0],unit), toMm(item.from[1],unit)];
+  const [x2,y2] = [toMm(item.to[0],unit),   toMm(item.to[1],unit)];
+  const dist = Math.round(Math.sqrt((x2-x1)**2+(y2-y1)**2));
+  return {
+    kind: "measure", id: item.id,
+    from: [x1,y1], to: [x2,y2],
+    label: item.label, autoLabel: String(dist),
+    offset: item.offset ?? 0,
+    stroke: item.stroke ?? "#888",
+    labelPos: item.labelPos ?? "outer",
+  };
+}
+
+function compile(doc) {
+  const unit = doc.unit ?? "mm";
+  const shapes = (doc.items ?? []).map(item => {
+    if (item.type === "rect") return compileRect(item, unit);
+    if (item.type === "path") return compilePath(item, unit);
+    if (item.type === "measure") return compileMeasure(item, unit);
+    throw new Error("Unknown type: " + item.type);
+  });
+  return {
+    plotW: toMm(doc.plot.width, unit),
+    plotH: toMm(doc.plot.depth, unit),
+    plotLabel: doc.plot.label,
+    plotShowDimensions: doc.plot.showDimensions !== false,
+    shapes, unit,
+    dimensionOffset: doc.dimensionOffset ?? 0,
+  };
+}
+
+// ── Renderer (ported from renderer.ts) ────────────────────────────────────────
+const CANVAS_W = 1400, CANVAS_H = 900, PADDING = 80;
+
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function fmtMm(mm, unit) {
+  if (unit === "m")  return (mm / 1000).toLocaleString("en", { maximumFractionDigits: 3 });
+  if (unit === "cm") return (mm / 10).toLocaleString("en", { maximumFractionDigits: 1 });
+  return String(Math.round(mm));
+}
+
+function hDimLine(x1, x2, y, label, textBelow = false) {
+  if (Math.abs(x2 - x1) < 1) return "";
+  const mid = (x1 + x2) / 2;
+  const ty = textBelow ? y + 14 : y - 6;
+  return `<g class="dim-line">
+    <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#888" stroke-width="1" marker-start="url(#arrow-start)" marker-end="url(#arrow-end)"/>
+    <line x1="${x1}" y1="${y-8}" x2="${x1}" y2="${y+8}" stroke="#888" stroke-width="1"/>
+    <line x1="${x2}" y1="${y-8}" x2="${x2}" y2="${y+8}" stroke="#888" stroke-width="1"/>
+    <text x="${mid}" y="${ty}" text-anchor="middle" font-size="11" fill="#555" font-family="monospace">${esc(label)}</text>
+  </g>`;
+}
+
+function vDimLine(y1, y2, x, label, textRight = false) {
+  if (Math.abs(y2 - y1) < 1) return "";
+  const mid = (y1 + y2) / 2;
+  const tx = textRight ? x + 14 : x - 6;
+  return `<g class="dim-line">
+    <line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="#888" stroke-width="1" marker-start="url(#arrow-start)" marker-end="url(#arrow-end)"/>
+    <line x1="${x-8}" y1="${y1}" x2="${x+8}" y2="${y1}" stroke="#888" stroke-width="1"/>
+    <line x1="${x-8}" y1="${y2}" x2="${x+8}" y2="${y2}" stroke="#888" stroke-width="1"/>
+    <text x="${tx}" y="${mid}" text-anchor="middle" font-size="11" fill="#555" font-family="monospace" transform="rotate(-90,${tx},${mid})">${esc(label)}</text>
+  </g>`;
+}
+
+function renderRectShape(r, scale, offX, offY, unit, dimOffset) {
+  const cx = offX + r.x * scale, cy = offY + r.y * scale;
+  const cw = r.w * scale, ch = r.h * scale;
+  const sw = r.strokeWidth > 0 ? r.strokeWidth * scale : 1.5;
+  const dash = r.strokeDash ? ` stroke-dasharray="${r.strokeDash}"` : "";
+  let out = `<rect x="${cx}" y="${cy}" width="${cw}" height="${ch}" stroke="${esc(r.stroke)}" stroke-width="${sw}" fill="${esc(r.fill)}"${dash}/>`;
+  if (r.label) {
+    const lx = cx+cw/2, ly = cy+ch/2;
+    const autoRot = r.labelRotation !== undefined ? r.labelRotation : (ch > cw ? 90 : 0);
+    const rot = autoRot !== 0 ? ` transform="rotate(${autoRot},${lx},${ly})"` : "";
+    out += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="#1a3a2a" font-family="sans-serif"${rot}>${esc(r.label)}</text>`;
+  }
+  if (r.dimSides.length > 0) {
+    const wLabel = fmtMm(r.w, unit), hLabel = fmtMm(r.h, unit);
+    for (const { side, labelPos } of r.dimSides) {
+      const outer = labelPos === "outer";
+      if (side === "top")    out += hDimLine(cx, cx+cw, cy-dimOffset, wLabel, !outer);
+      if (side === "bottom") out += hDimLine(cx, cx+cw, cy+ch+dimOffset, wLabel, outer);
+      if (side === "right")  out += vDimLine(cy, cy+ch, cx+cw+dimOffset, hLabel, outer);
+      if (side === "left")   out += vDimLine(cy, cy+ch, cx-dimOffset, hLabel, !outer);
+    }
+  }
+  return `<g data-id="${esc(r.id)}" class="plan-item">${out}</g>`;
+}
+
+function renderMeasure(m, scale, offX, offY) {
+  const x1=offX+m.from[0]*scale, y1=offY+m.from[1]*scale;
+  const x2=offX+m.to[0]*scale,   y2=offY+m.to[1]*scale;
+  const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+  if (len<1) return "";
+  const nx=-dy/len, ny=dx/len;
+  const ox=nx*m.offset, oy=ny*m.offset;
+  const ax=x1+ox, ay=y1+oy, bx=x2+ox, by=y2+oy;
+  const mx2=(ax+bx)/2, my2=(ay+by)/2;
+  const label = m.label ?? m.autoLabel;
+  const angle = Math.atan2(dy,dx)*180/Math.PI;
+  const ta = (angle>90||angle<-90) ? angle+180 : angle;
+  const labelDy = m.labelPos === "inner" ? "12" : "-5";
+  const tl=6;
+  return `<g data-id="${esc(m.id)}" class="measure-item">
+    <line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="${esc(m.stroke)}" stroke-width="1" marker-start="url(#arrow-start)" marker-end="url(#arrow-end)"/>
+    <line x1="${ax-nx*tl}" y1="${ay-ny*tl}" x2="${ax+nx*tl}" y2="${ay+ny*tl}" stroke="${esc(m.stroke)}" stroke-width="1"/>
+    <line x1="${bx-nx*tl}" y1="${by-ny*tl}" x2="${bx+nx*tl}" y2="${by+ny*tl}" stroke="${esc(m.stroke)}" stroke-width="1"/>
+    <text x="${mx2}" y="${my2}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${esc(m.stroke)}" font-family="monospace" transform="rotate(${ta},${mx2},${my2})" dy="${labelDy}">${esc(label)}</text>
+  </g>`;
+}
+
+function renderShape(shape, scale, offX, offY, unit, dimOffset) {
+  if (shape.kind === "rect") return renderRectShape(shape, scale, offX, offY, unit, dimOffset);
+  if (shape.kind === "path") {
+    const pts = shape.points.map(([x,y]) => `${offX+x*scale},${offY+y*scale}`).join(" ");
+    const dash = shape.strokeDash ? ` stroke-dasharray="${shape.strokeDash}"` : "";
+    return `<polyline points="${pts}" stroke="${esc(shape.stroke)}" stroke-width="${shape.strokeWidth*scale}" fill="none"${dash}/>`;
+  }
+  if (shape.kind === "measure") return renderMeasure(shape, scale, offX, offY);
+  return "";
+}
+
+const DEFS = `<defs>
+  <marker id="arrow-start" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M6,0 L0,3 L6,6" fill="none" stroke="#888" stroke-width="1"/>
+  </marker>
+  <marker id="arrow-end" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0,0 L6,3 L0,6" fill="none" stroke="#888" stroke-width="1"/>
+  </marker>
+</defs>`;
+
+function renderSvg(scene) {
+  const dimOffset = scene.dimensionOffset;
+  const extra = dimOffset * 2 + PADDING;
+  const scale = Math.min((CANVAS_W - extra*2) / scene.plotW, (CANVAS_H - extra*2) / scene.plotH);
+  const totalW = scene.plotW * scale, totalH = scene.plotH * scale;
+  const offX = (CANVAS_W - totalW) / 2, offY = (CANVAS_H - totalH) / 2;
+
+  let body = `<rect x="${offX}" y="${offY}" width="${totalW}" height="${totalH}" stroke="#333" stroke-width="1.5" fill="none"/>`;
+  if (scene.plotShowDimensions) {
+    body += hDimLine(offX, offX+totalW, offY-dimOffset, fmtMm(scene.plotW, scene.unit));
+    body += vDimLine(offY, offY+totalH, offX-dimOffset, fmtMm(scene.plotH, scene.unit));
+  }
+  if (scene.plotLabel) body += `<text x="${offX+totalW/2}" y="${offY+totalH+20}" text-anchor="middle" font-size="12" fill="#666" font-family="sans-serif">${esc(scene.plotLabel)}</text>`;
+  for (const shape of scene.shapes) body += renderShape(shape, scale, offX, offY, scene.unit, dimOffset);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${CANVAS_W}" height="${CANVAS_H}" viewBox="0 0 ${CANVAS_W} ${CANVAS_H}">${DEFS}${body}</svg>`;
+}
+
+// ── UI ─────────────────────────────────────────────────────────────────────────
+const input      = document.getElementById("input");
+const runBtn     = document.getElementById("run");
+const svgWrap    = document.getElementById("svg-wrap");
+const errorBox   = document.getElementById("error-box");
+const exportHtml = document.getElementById("export-html");
+const unitHint   = document.getElementById("unit-hint");
+const zoomIn     = document.getElementById("zoom-in");
+const zoomOut    = document.getElementById("zoom-out");
+const zoomReset  = document.getElementById("zoom-reset");
+
+const EXAMPLE = JSON.stringify({
+  "version": "drawplan/v1",
+  "unit": "mm",
+  "plot": { "width": 59360, "depth": 21940, "label": "Mảnh đất" },
+  "items": [
+    { "id": "garage",         "label": "Nhà xe",             "type": "rect", "x": 1125,  "y": 1125, "width": 21947, "height": 7400,  "style": "solid"  },
+    { "id": "garage-plattor", "label": "Sân lát nhà xe",     "type": "rect", "x": 1125,  "y": 8525, "width": 21947, "height": 2000,  "style": "dashed" },
+    { "id": "house",          "label": "Nhà",                "type": "rect", "x": 29393, "y": 0,    "width": 21000, "height": 13230, "style": "solid"  },
+    { "id": "huvudentre",     "label": "Lối vào chính",      "type": "rect", "x": 33393, "y": 0,    "width": 20000, "height": 4000,  "style": "dashed" },
+    { "id": "parkering",      "label": "Sân đỗ xe",          "type": "rect", "x": 50393, "y": 4500, "width": 6800,  "height": 8800,  "style": "dashed" },
+    { "id": "tradack",        "label": "Ban công",  "type": "rect", "x": 25393, "y": 8500, "width": 3600,  "height": 5000,  "style": "dashed" },
+    { "id": "vastra-sidan",   "label": "Sân phía tây",       "type": "rect", "x": 25393, "y": 13500,"width": 14800, "height": 3200,  "style": "dashed" }
+  ]
+}, null, 2);
+
+input.value = EXAMPLE;
+
+// ── Pan / Zoom ─────────────────────────────────────────────────────────────────
+let viewBox = null;
+let lastSvgW = CANVAS_W, lastSvgH = CANVAS_H;
+const getSvg = () => svgWrap.querySelector("svg");
+
+function applyViewBox(vb) {
+  const svg = getSvg(); if (!svg) return;
+  svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+  viewBox = vb;
+}
+
+// ── Measure tool ──────────────────────────────────────────────────────────────
+const measureBtn = document.getElementById("measure");
+let measureMode = false;
+let measurePt1  = null;
+let currentDoc  = null;
+
+function getDocMapping(doc) {
+  const CW = 1400, CH = 900, PAD = 80;
+  const unit = doc.unit ?? "mm";
+  const toMm = v => unit === "m" ? v*1000 : unit === "cm" ? v*10 : v;
+  const pW = toMm(doc.plot.width), pH = toMm(doc.plot.depth);
+  const extra = (doc.dimensionOffset ?? 0) * 2 + PAD;
+  const scale = Math.min((CW - extra*2)/pW, (CH - extra*2)/pH);
+  return { scale, offX: (CW - pW*scale)/2, offY: (CH - pH*scale)/2, unit };
+}
+
+function screenToDoc(clientX, clientY) {
+  const svg = getSvg(); if (!svg || !viewBox || !currentDoc) return null;
+  const r = svg.getBoundingClientRect();
+  const svgX = viewBox.x + (clientX - r.left) / r.width  * viewBox.w;
+  const svgY = viewBox.y + (clientY - r.top)  / r.height * viewBox.h;
+  const m = getDocMapping(currentDoc);
+  return { mmX: (svgX - m.offX)/m.scale, mmY: (svgY - m.offY)/m.scale, svgX, svgY };
+}
+
+function fmtDist(mm, unit) {
+  if (unit === "m")  return `${(mm/1000).toFixed(3)} m`;
+  if (unit === "cm") return `${(mm/10).toFixed(1)} cm`;
+  return `${Math.round(mm)} mm`;
+}
+
+function getMeasureOverlay() {
+  const svg = getSvg(); if (!svg) return null;
+  let g = svg.querySelector("#measure-overlay");
+  if (!g) {
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("id", "measure-overlay");
+    g.style.pointerEvents = "none";
+    svg.appendChild(g);
+  }
+  return g;
+}
+
+function clearMeasureOverlay() {
+  const g = getSvg()?.querySelector("#measure-overlay");
+  if (g) g.innerHTML = ""; measurePt1 = null;
+}
+
+function drawMeasureOverlay(pt1, pt2, label) {
+  const g = getMeasureOverlay(); if (!g) return;
+  const dot = (cx, cy) => `<circle cx="${cx}" cy="${cy}" r="5" fill="#f59e0b" stroke="#fff" stroke-width="1.5"/>`;
+  const midX = (pt1.svgX + pt2.svgX)/2, midY = (pt1.svgY + pt2.svgY)/2;
+  const lw = label ? Math.max(60, label.length*7+16) : 0;
+  g.innerHTML = dot(pt1.svgX, pt1.svgY) +
+    `<line x1="${pt1.svgX}" y1="${pt1.svgY}" x2="${pt2.svgX}" y2="${pt2.svgY}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,3"/>` +
+    dot(pt2.svgX, pt2.svgY) +
+    (label ? `<rect x="${midX-lw/2}" y="${midY-13}" width="${lw}" height="18" rx="3" fill="rgba(0,0,0,.72)"/><text x="${midX}" y="${midY+2}" text-anchor="middle" font-size="11" fill="#fff" font-family="monospace">${label}</text>` : "");
+}
+
+function setMeasureMode(on) {
+  measureMode = on;
+  if (on) {
+    measureBtn.classList.add("active"); svgWrap.style.cursor = "crosshair";
+    errorBox.textContent = "📏 Click điểm thứ nhất để bắt đầu đo...";
+  } else {
+    measureBtn.classList.remove("active"); svgWrap.style.cursor = "";
+    errorBox.textContent = ""; clearMeasureOverlay();
+  }
+}
+
+measureBtn.addEventListener("click", () => setMeasureMode(!measureMode));
+document.addEventListener("keydown", e => { if (e.key === "Escape" && measureMode) setMeasureMode(false); });
+svgWrap.addEventListener("click", e => {
+  if (!measureMode) return;
+  const pt = screenToDoc(e.clientX, e.clientY); if (!pt) return;
+  if (!measurePt1) {
+    clearMeasureOverlay(); measurePt1 = pt;
+    drawMeasureOverlay(pt, pt, null);
+    errorBox.textContent = "📏 Click điểm thứ hai...";
+  } else {
+    const dist = Math.sqrt((pt.mmX-measurePt1.mmX)**2 + (pt.mmY-measurePt1.mmY)**2);
+    const label = fmtDist(dist, getDocMapping(currentDoc).unit);
+    drawMeasureOverlay(measurePt1, pt, label);
+    errorBox.textContent = `📏 Khoảng cách: ${label} — Click tiếp để đo lại, Esc để thoát`;
+    measurePt1 = null;
+  }
+});
+
+svgWrap.addEventListener("wheel", e => {
+  e.preventDefault();
+  if (!viewBox) return;
+  const svg = getSvg(); if (!svg) return;
+  const r = svg.getBoundingClientRect();
+  const mx = (e.clientX - r.left) / r.width, my = (e.clientY - r.top) / r.height;
+  const f = e.deltaY > 0 ? 1.1 : 0.9;
+  const nw = viewBox.w * f, nh = viewBox.h * f;
+  applyViewBox({ x: viewBox.x + (viewBox.w - nw) * mx, y: viewBox.y + (viewBox.h - nh) * my, w: nw, h: nh });
+}, { passive: false });
+
+let panStart = null;
+svgWrap.addEventListener("pointerdown", e => { if (e.button !== 0 || measureMode) return; panStart = { cx: e.clientX, cy: e.clientY, vb: { ...viewBox } }; svgWrap.setPointerCapture(e.pointerId); });
+svgWrap.addEventListener("pointermove", e => {
+  if (measureMode && measurePt1) { const pt = screenToDoc(e.clientX, e.clientY); if (pt) drawMeasureOverlay(measurePt1, pt, null); return; }
+  if (!panStart || !viewBox) return;
+  const svg = getSvg(); if (!svg) return;
+  const r = svg.getBoundingClientRect();
+  applyViewBox({ ...panStart.vb, x: panStart.vb.x - (e.clientX - panStart.cx) / r.width * panStart.vb.w, y: panStart.vb.y - (e.clientY - panStart.cy) / r.height * panStart.vb.h });
+});
+svgWrap.addEventListener("pointerup", () => panStart = null);
+
+zoomIn.addEventListener("click", () => { if (!viewBox) return; const cx=viewBox.x+viewBox.w/2, cy=viewBox.y+viewBox.h/2, nw=viewBox.w*.8, nh=viewBox.h*.8; applyViewBox({x:cx-nw/2,y:cy-nh/2,w:nw,h:nh}); });
+zoomOut.addEventListener("click", () => { if (!viewBox) return; const cx=viewBox.x+viewBox.w/2, cy=viewBox.y+viewBox.h/2, nw=viewBox.w*1.25, nh=viewBox.h*1.25; applyViewBox({x:cx-nw/2,y:cy-nh/2,w:nw,h:nh}); });
+zoomReset.addEventListener("click", () => applyViewBox({ x: 0, y: 0, w: lastSvgW, h: lastSvgH }));
+
+// ── Render ─────────────────────────────────────────────────────────────────────
+runBtn.addEventListener("click", () => {
+  errorBox.textContent = "";
+  let doc;
+  try { doc = JSON.parse(input.value); } catch (e) { errorBox.textContent = "Lỗi JSON: " + e.message; return; }
+  try {
+    const scene = compile(doc);
+    const svg   = renderSvg(scene);
+    svgWrap.innerHTML = svg;
+    currentDoc = doc;
+    clearMeasureOverlay();
+    lastSvgW = CANVAS_W; lastSvgH = CANVAS_H;
+    viewBox = { x: 0, y: 0, w: CANVAS_W, h: CANVAS_H };
+    unitHint.textContent = `Đơn vị: ${doc.unit ?? "mm"}`;
+  } catch (err) { errorBox.textContent = String(err); }
+});
+
+// ── Xuất hình HTML ─────────────────────────────────────────────────────────────
+exportHtml.addEventListener("click", () => {
+  const svg = getSvg(); if (!svg) return;
+
+  let title = "DrawPlan";
+  try { const d = JSON.parse(input.value); if (d?.plot?.label) title = d.plot.label; } catch {}
+
+  const svgStr = svg.outerHTML;
+  const html = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>${title}</title>
+  <style>
+    body{margin:0;background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;font-family:sans-serif;}
+    h1{margin:16px 0 8px;font-size:16px;color:#1e3a2f;}
+    p{font-size:12px;color:#94a3b8;margin-bottom:12px;}
+    svg{max-width:100%;height:auto;display:block;cursor:grab;border:1px solid #e2e8f0;border-radius:4px;}
+    svg:active{cursor:grabbing;}
+  </style>
+</head>
+<body>
+<h1>${title}</h1>
+<p>Cuộn chuột để zoom · Kéo để di chuyển</p>
+${svgStr}
+<script>
+  const svg=document.querySelector("svg");
+  let vb={x:0,y:0,w:parseFloat(svg.getAttribute("width")||1400),h:parseFloat(svg.getAttribute("height")||900)};
+  function applyVb(){svg.setAttribute("viewBox",vb.x+" "+vb.y+" "+vb.w+" "+vb.h);}
+  svg.addEventListener("wheel",e=>{
+    e.preventDefault();
+    const r=svg.getBoundingClientRect(),mx=(e.clientX-r.left)/r.width,my=(e.clientY-r.top)/r.height;
+    const f=e.deltaY>0?1.1:0.9,nw=vb.w*f,nh=vb.h*f;
+    vb={x:vb.x+(vb.w-nw)*mx,y:vb.y+(vb.h-nh)*my,w:nw,h:nh};applyVb();
+  },{passive:false});
+  let pan=null;
+  svg.addEventListener("pointerdown",e=>{pan={cx:e.clientX,cy:e.clientY,vb:{...vb}};svg.setPointerCapture(e.pointerId);});
+  svg.addEventListener("pointermove",e=>{
+    if(!pan)return;const r=svg.getBoundingClientRect();
+    vb={...pan.vb,x:pan.vb.x-(e.clientX-pan.cx)/r.width*pan.vb.w,y:pan.vb.y-(e.clientY-pan.cy)/r.height*pan.vb.h};applyVb();
+  });
+  svg.addEventListener("pointerup",()=>pan=null);
+<\/script>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: "text/html" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url; a.download = title.replace(/\s+/g,"_") + ".html"; a.click();
+  URL.revokeObjectURL(url);
+
+  exportHtml.textContent = "Đã xuất!";
+  exportHtml.classList.add("done");
+  setTimeout(() => { exportHtml.textContent = exportHtml.dataset.label; exportHtml.classList.remove("done"); }, 1500);
+});
+
+window.addEventListener("load", () => {
+  document.getElementById("help-btn").addEventListener("click", () =>
+    document.getElementById("help-overlay").classList.add("open"));
+  document.getElementById("help-close").addEventListener("click", () =>
+    document.getElementById("help-overlay").classList.remove("open"));
+  document.getElementById("help-overlay").addEventListener("click", e => {
+    if (e.target === document.getElementById("help-overlay"))
+      document.getElementById("help-overlay").classList.remove("open");
+  });
+  input.value = JSON.stringify({
+  "version": "drawplan/v1",
+  "unit": "mm",
+  "plot": {
+    "width": 21940,
+    "depth": 59360,
+    "label": "Mảnh đất"
+  },
+  "items": [
+    {
+      "id": "house",
+      "label": "Nhà",
+      "labelRotation": 0,
+      "showDimensions": {
+        "top": { "labelPos": "inner" },
+        "right": { "labelPos": "inner" }
+      },
+      "type": "rect",
+      "x": 8710,
+      "y": 31465,
+      "width": 8730,
+      "height": 21000,
+      "style": "solid",
+      "strokeWidth": 150
+    },
+    {
+      "id": "huvudentre",
+      "label": "",
+      "type": "rect",
+      "x": 17440,
+      "y": 31465,
+      "width": 4500,
+      "height": 21000,
+      "style": "dashed",
+      "showDimensions": { "right": false }
+    },
+    {
+      "id": "parkering",
+      "label": "Sân đỗ xe",
+      "type": "rect",
+      "x": 8710,
+      "y": 52465,
+      "width": 8730,
+      "height": 6895,
+      "style": "dashed"
+    },
+    {
+      "id": "tradack",
+      "label": "Ban công",
+      "type": "rect",
+      "x": 8680,
+      "y": 27665,
+      "width": 5030,
+      "height": 3800,
+      "style": "dashed"
+    },
+    {
+      "id": "vastra-sidan",
+      "label": "Sân phía tây",
+      "type": "rect",
+      "x": 5510,
+      "y": 27665,
+      "width": 3200,
+      "height": 14800,
+      "style": "dashed",
+      "showDimensions": { "left": { "labelPos": "outer" } }
+    },
+    {
+      "id": "garage",
+      "label": "Nhà kho",
+      "type": "rect",
+      "x": 13415,
+      "y": 1125,
+      "width": 7400,
+      "height": 21947,
+      "style": "solid",
+      "showDimensions": {
+        "top": false,
+        "bottom": { "labelPos": "outer" },
+        "right": { "labelPos": "inner" }
+      }
+    },
+    {
+      "id": "doors",
+      "label": "Cửa chính",
+      "type": "rect",
+      "x": 17400,
+      "y": 39988,
+      "width": 2500,
+      "height": 2700,
+      "style": "dashed",
+      "stroke": "none",
+      "showDimensions": { "top": false }
+    },
+    {
+      "id": "garage-plattor",
+      "label": "Lối nhà kho",
+      "type": "rect",
+      "x": 11415,
+      "y": 1125,
+      "width": 2000,
+      "height": 21947,
+      "style": "dashed",
+      "showDimensions": {
+        "top": false,
+        "right": false,
+        "left": { "labelPos": "outer" },
+        "bottom": { "labelPos": "outer" }
+      }
+    },
+    {
+      "id": "main-door-pos",
+      "type": "measure",
+      "from": [17400, 42688],
+      "to": [17400, 52465],
+      "label": "9777",
+      "labelPos": "outer"
+    },
+    {
+      "id": "measure-garage-top",
+      "type": "measure",
+      "from": [21940, 23023],
+      "to": [20815, 23023],
+      "label": "1125",
+      "labelPos": "inner"
+    },
+    {
+      "id": "measure-garage-left",
+      "type": "measure",
+      "from": [16815, 0],
+      "to": [16815, 1125],
+      "label": "1125"
+    }
+  ]
+}, null, 2);
+  runBtn.click();
+});
+</script>
+</body>
+</html>
