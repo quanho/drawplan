@@ -581,3 +581,13 @@ window.addEventListener("load", () => {
 }, null, 2);
   runBtn.click();
 });
+
+// ── Panel toggle ────────────────────────────────────────────────────────────
+const ICON_PANEL_SHOW = `<svg width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 1V15" stroke="currentColor" stroke-width="1.5"/><path d="M11 5.5L14 8L11 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const ICON_PANEL_HIDE = `<svg width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="1" width="7" height="14" rx="2" fill="currentColor" opacity="0.45"/><path d="M7 1V15" stroke="currentColor" stroke-width="1.5"/><path d="M14 5.5L11 8L14 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+document.getElementById("panel-toggle").addEventListener("click", () => {
+  const main = document.querySelector("main");
+  const btn  = document.getElementById("panel-toggle");
+  const hidden = main.classList.toggle("panel-hidden");
+  btn.innerHTML = hidden ? ICON_PANEL_SHOW : ICON_PANEL_HIDE;
+});
