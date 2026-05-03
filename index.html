@@ -6,247 +6,217 @@
   <title>DrawPlan — Vẽ mặt bằng</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --left-w: 360px; --header-h: 44px; }
+
+    :root {
+      --left-w: 360px;
+      --header-h: 44px;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-size: 14px; background: #f1f5f9; color: #1e293b;
-      height: 100vh; display: grid; grid-template-rows: var(--header-h) 1fr; overflow: hidden;
+      font-size: 14px;
+      background: #f1f5f9;
+      color: #1e293b;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: var(--header-h) 1fr;
+      overflow: hidden;
     }
+
     header {
-      background: #1e3a2f; color: #f0fdf4;
-      display: flex; align-items: center; gap: 12px;
-      padding: 0 18px; font-size: 15px; font-weight: 600;
+      background: #1e3a2f;
+      color: #f0fdf4;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 18px;
+      font-size: 15px;
+      font-weight: 600;
     }
     header span { opacity: .5; font-weight: 400; font-size: 12px; }
-    main { display: grid; grid-template-columns: var(--left-w) 1fr; overflow: hidden; }
+    header a {
+      margin-left: auto;
+      color: #86efac;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    header a:hover { text-decoration: underline; }
+
+    main {
+      display: grid;
+      grid-template-columns: var(--left-w) 1fr;
+      overflow: hidden;
+    }
+
+    /* ── Left panel ─────────────────────────────────────── */
     #left {
-      display: flex; flex-direction: column;
-      border-right: 1px solid #d1fae5; background: #fff; overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #d1fae5;
+      background: #fff;
+      overflow: hidden;
     }
+
     .panel-title {
-      font-size: 11px; font-weight: 700; letter-spacing: .06em;
-      text-transform: uppercase; color: #64748b;
-      padding: 8px 12px 6px; border-bottom: 1px solid #e2e8f0;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #64748b;
+      padding: 8px 12px 6px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
+
     #input {
-      flex: 1; font-family: "SF Mono", "Fira Code", Consolas, monospace;
-      font-size: 12px; line-height: 1.5; padding: 10px;
-      border: none; resize: none; outline: none;
-      color: #1e293b; background: #f8fafc;
+      flex: 1;
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 10px;
+      border: none;
+      resize: none;
+      outline: none;
+      color: #1e293b;
+      background: #f8fafc;
     }
+
     #toolbar {
-      display: flex; gap: 8px; padding: 8px 10px;
-      border-top: 1px solid #e2e8f0; background: #fff;
+      display: flex;
+      gap: 8px;
+      padding: 8px 10px;
+      border-top: 1px solid #e2e8f0;
+      background: #fff;
     }
+
     button {
-      padding: 5px 14px; border: none; border-radius: 6px;
-      cursor: pointer; font-size: 13px; font-weight: 600; transition: background .15s;
+      padding: 5px 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background .15s;
     }
-    #run { background: #16a34a; color: #fff; flex: 1; }
+
+    #run {
+      background: #16a34a;
+      color: #fff;
+      flex: 1;
+    }
     #run:hover { background: #15803d; }
-    #export-html { background: #0ea5e9; color: #fff; }
+
+    #copy-svg {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+    #copy-svg:hover { background: #cbd5e1; }
+    #copy-svg.copied { background: #dcfce7; color: #166534; }
+
+    #export-html {
+      background: #0ea5e9;
+      color: #fff;
+    }
     #export-html:hover { background: #0284c7; }
     #export-html.done { background: #dcfce7; color: #166534; }
-    #measure { background: #e2e8f0; color: #1e293b; }
+
+    #measure {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
     #measure:hover { background: #cbd5e1; }
     #measure.active { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+
     #error-box {
-      padding: 8px 10px; font-size: 12px; color: #b91c1c;
-      background: #fef2f2; border-top: 1px solid #fecaca;
-      min-height: 28px; max-height: 80px; overflow-y: auto;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #b91c1c;
+      background: #fef2f2;
+      border-top: 1px solid #fecaca;
+      min-height: 28px;
+      max-height: 80px;
+      overflow-y: auto;
     }
-    #right { overflow: hidden; position: relative; background: #fff; }
-    #svg-wrap { width: 100%; height: 100%; overflow: hidden; cursor: grab; }
+
+    /* ── Right panel — SVG canvas ────────────────────────── */
+    #right {
+      overflow: hidden;
+      position: relative;
+      background: #fff;
+    }
+
+    #svg-wrap {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      cursor: grab;
+    }
     #svg-wrap:active { cursor: grabbing; }
-    #svg-wrap svg { display: block; width: 100%; height: 100%; }
+    #svg-wrap svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Zoom controls ───────────────────────────────────── */
     #zoom-controls {
-      position: absolute; bottom: 16px; right: 16px;
-      display: flex; flex-direction: column; gap: 4px;
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
     .zoom-btn {
-      width: 30px; height: 30px; background: #fff;
-      border: 1px solid #d1d5db; border-radius: 6px;
-      font-size: 18px; display: flex; align-items: center;
-      justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.1); padding: 0;
+      width: 30px;
+      height: 30px;
+      background: #fff;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 18px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,.1);
+      padding: 0;
     }
     .zoom-btn:hover { background: #f1f5f9; }
-    #unit-hint { position: absolute; bottom: 16px; left: 16px; font-size: 11px; color: #94a3b8; }
 
-    /* ── Help modal ────────────────────────────────────── */
-    #help-btn {
-      margin-left: auto; background: transparent; border: 1px solid rgba(255,255,255,.3);
-      color: #86efac; font-size: 13px; font-weight: 600; padding: 3px 12px;
-      border-radius: 5px; cursor: pointer;
-    }
-    #help-btn:hover { background: rgba(255,255,255,.1); }
-    #help-overlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5);
-      z-index: 100; align-items: center; justify-content: center;
-    }
-    #help-overlay.open { display: flex; }
-    #help-box {
-      background: #fff; border-radius: 10px; width: min(820px, 95vw);
-      max-height: 90vh; overflow-y: auto; padding: 28px 32px 40px;
-      position: relative; font-size: 13px; line-height: 1.7; color: #1e293b;
-    }
-    #help-close {
-      position: absolute; top: 14px; right: 16px;
-      background: #e2e8f0; border: none; border-radius: 5px;
-      padding: 3px 10px; font-size: 13px; cursor: pointer;
-    }
-    #help-close:hover { background: #cbd5e1; }
-    #help-box h1 { font-size: 20px; font-weight: 700; color: #1e3a2f; margin-bottom: 4px; }
-    #help-box .sub { color: #64748b; font-size: 12px; margin-bottom: 28px; }
-    #help-box h2 {
-      font-size: 14px; font-weight: 700; color: #1e3a2f;
-      margin: 26px 0 8px; padding-bottom: 5px; border-bottom: 2px solid #d1fae5;
-    }
-    #help-box h3 { font-size: 12px; font-weight: 700; color: #374151; margin: 14px 0 5px; }
-    #help-box p { margin-bottom: 8px; color: #374151; }
-    #help-box li { margin-left: 18px; margin-bottom: 3px; color: #374151; }
-    #help-box code {
-      font-family: "SF Mono", "Fira Code", Consolas, monospace; font-size: 11px;
-      background: #e2e8f0; padding: 1px 5px; border-radius: 3px;
-    }
-    #help-box pre {
-      background: #0f172a; color: #e2e8f0; border-radius: 7px;
-      padding: 14px 16px; overflow-x: auto; margin: 8px 0 16px;
-      font-family: "SF Mono", "Fira Code", Consolas, monospace; font-size: 11px; line-height: 1.6;
-    }
-    #help-box pre code { background: none; color: inherit; padding: 0; }
-    #help-box .k { color: #7dd3fc; } #help-box .s { color: #86efac; }
-    #help-box .n { color: #fbbf24; } #help-box .c { color: #64748b; font-style: italic; }
-    #help-box table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 8px 0 16px; }
-    #help-box th { background: #f0fdf4; color: #1e3a2f; font-weight: 700; text-align: left; padding: 7px 10px; border: 1px solid #d1fae5; }
-    #help-box td { padding: 6px 10px; border: 1px solid #e2e8f0; vertical-align: top; }
-    #help-box tr:nth-child(even) td { background: #f8fafc; }
-    #help-box .tip {
-      background: #f0fdf4; border-left: 4px solid #16a34a;
-      padding: 9px 12px; border-radius: 0 6px 6px 0;
-      margin: 8px 0 16px; font-size: 12px; color: #166534;
+    #unit-hint {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      font-size: 11px;
+      color: #94a3b8;
     }
   </style>
 </head>
 <body>
-<header>🏡 DrawPlan <span>v1 — Vẽ mặt bằng theo kích thước thực · Standalone</span>
-  <button id="help-btn">? Hướng dẫn</button>
+
+<header>
+  🏡 DrawPlan <span>v1 — Vẽ mặt bằng theo kích thước thực</span>
+  <a href="/help" target="_blank">? Hướng dẫn</a>
 </header>
 
-<!-- ── Help modal ──────────────────────────────────────────────────────── -->
-<div id="help-overlay">
-<div id="help-box">
-  <button id="help-close">✕ Đóng</button>
-  <h1>Hướng dẫn sử dụng DrawPlan</h1>
-  <p class="sub">Công cụ vẽ mặt bằng nhà/vườn theo kích thước thực, mô tả bằng JSON.</p>
-
-  <h2>1. Tổng quan</h2>
-  <p>Nhập JSON vào ô bên trái, nhấn <strong>▶ Vẽ</strong>, sơ đồ hiện ra bên phải.</p>
-  <ul>
-    <li><strong>Pan</strong>: giữ chuột và kéo trên bản vẽ.</li>
-    <li><strong>Zoom</strong>: lăn chuột, hoặc dùng nút <code>+</code> / <code>−</code> / <code>⊙</code>.</li>
-    <li><strong>Xuất hình HTML</strong>: tải về file HTML độc lập để chia sẻ.</li>
-  </ul>
-
-  <h2>2. Cấu trúc tài liệu</h2>
-  <pre><code><span class="c">// Cấu trúc tối giản</span>
-{
-  <span class="k">"version"</span>: <span class="s">"drawplan/v1"</span>,
-  <span class="k">"unit"</span>: <span class="s">"mm"</span>,          <span class="c">// "mm" | "cm" | "m"</span>
-  <span class="k">"plot"</span>: {
-    <span class="k">"width"</span>: <span class="n">60000</span>,     <span class="c">// chiều ngang mảnh đất</span>
-    <span class="k">"depth"</span>: <span class="n">22000</span>,     <span class="c">// chiều sâu (dọc)</span>
-    <span class="k">"label"</span>: <span class="s">"Mảnh đất"</span>
-  },
-  <span class="k">"dimensionOffset"</span>: <span class="n">0</span>,  <span class="c">// khoảng cách px từ hình đến đường kích thước</span>
-  <span class="k">"items"</span>: [ <span class="c">/* danh sách hình */</span> ]
-}</code></pre>
-
-  <h2>3. Hình chữ nhật — <code>type: "rect"</code></h2>
-  <pre><code>{
-  <span class="k">"id"</span>: <span class="s">"house"</span>, <span class="k">"type"</span>: <span class="s">"rect"</span>, <span class="k">"label"</span>: <span class="s">"Nhà"</span>,
-  <span class="k">"x"</span>: <span class="n">8710</span>, <span class="k">"y"</span>: <span class="n">31465</span>, <span class="k">"width"</span>: <span class="n">8730</span>, <span class="k">"height"</span>: <span class="n">21000</span>,
-  <span class="k">"style"</span>: <span class="s">"solid"</span>,       <span class="c">// "solid" | "dashed"</span>
-  <span class="k">"fill"</span>: <span class="s">"#e0f2fe"</span>,    <span class="c">// màu nền CSS</span>
-  <span class="k">"stroke"</span>: <span class="s">"#1a7a3e"</span>, <span class="c">// màu viền, "none" = không viền</span>
-  <span class="k">"strokeWidth"</span>: <span class="n">150</span>,   <span class="c">// độ dày nét (cùng đơn vị "unit")</span>
-  <span class="k">"labelRotation"</span>: <span class="n">0</span>,   <span class="c">// góc xoay nhãn (tự động nếu bỏ qua)</span>
-  <span class="k">"showDimensions"</span>: <span class="s">true</span> <span class="c">// xem mục 6</span>
-}</code></pre>
-  <table>
-    <tr><th>Trường</th><th>Mô tả</th></tr>
-    <tr><td><code>stroke: "none"</code></td><td>Không vẽ viền</td></tr>
-    <tr><td><code>strokeWidth</code></td><td>Độ dày nét theo đơn vị <code>unit</code>. VD: mm, <code>150</code> ≈ 1.5px</td></tr>
-    <tr><td><code>labelRotation</code></td><td>Tự động: 90° nếu hình đứng, 0° nếu ngang. Override bằng số bất kỳ.</td></tr>
-  </table>
-
-  <h2>4. Đường gấp khúc — <code>type: "path"</code></h2>
-  <pre><code>{
-  <span class="k">"id"</span>: <span class="s">"fence"</span>, <span class="k">"type"</span>: <span class="s">"path"</span>,
-  <span class="k">"points"</span>: [[<span class="n">0</span>,<span class="n">0</span>],[<span class="n">10000</span>,<span class="n">0</span>],[<span class="n">10000</span>,<span class="n">5000</span>]],
-  <span class="k">"stroke"</span>: <span class="s">"#94a3b8"</span>, <span class="k">"strokeWidth"</span>: <span class="n">200</span>, <span class="k">"style"</span>: <span class="s">"dashed"</span>
-}</code></pre>
-
-  <h2>5. Đường đo — <code>type: "measure"</code></h2>
-  <pre><code>{
-  <span class="k">"id"</span>: <span class="s">"gap1"</span>, <span class="k">"type"</span>: <span class="s">"measure"</span>,
-  <span class="k">"from"</span>: [<span class="n">0</span>, <span class="n">0</span>], <span class="k">"to"</span>: [<span class="n">1125</span>, <span class="n">0</span>],
-  <span class="k">"label"</span>: <span class="s">"1125 mm"</span>,  <span class="c">// bỏ qua để tự tính</span>
-  <span class="k">"offset"</span>: <span class="n">0</span>,           <span class="c">// dịch vuông góc (px)</span>
-  <span class="k">"stroke"</span>: <span class="s">"#888"</span>,
-  <span class="k">"labelPos"</span>: <span class="s">"outer"</span>   <span class="c">// "outer" = trên đường | "inner" = dưới đường</span>
-}</code></pre>
-
-  <h2>6. Đường kích thước — <code>showDimensions</code></h2>
-  <p>Mặc định: hiện cạnh <code>top</code> và <code>right</code>. Record form <code>{ }</code> merge vào mặc định.</p>
-  <table>
-    <tr><th>Giá trị</th><th>Ý nghĩa</th></tr>
-    <tr><td><code>true</code></td><td>top + right, outer (mặc định)</td></tr>
-    <tr><td><code>false</code></td><td>Ẩn tất cả</td></tr>
-    <tr><td><code>["bottom","left"]</code></td><td>Chỉ các cạnh liệt kê (thay thế hoàn toàn)</td></tr>
-    <tr><td><code>{"bottom": true}</code></td><td>Merge: top + right + bottom</td></tr>
-    <tr><td><code>{"top": false}</code></td><td>Merge: ẩn top → chỉ còn right</td></tr>
-    <tr><td><code>{"right": {"labelPos": "inner"}}</code></td><td>Merge: right với nhãn phía trong</td></tr>
-  </table>
-  <h3>Vị trí nhãn — <code>labelPos</code></h3>
-  <table>
-    <tr><th>Cạnh</th><th><code>"outer"</code></th><th><code>"inner"</code></th></tr>
-    <tr><td><code>top</code></td><td>Trên đường</td><td>Dưới đường</td></tr>
-    <tr><td><code>bottom</code></td><td>Dưới đường</td><td>Trên đường</td></tr>
-    <tr><td><code>left</code></td><td>Trái đường</td><td>Phải đường</td></tr>
-    <tr><td><code>right</code></td><td>Phải đường</td><td>Trái đường</td></tr>
-  </table>
-  <pre><code><span class="c">// Ví dụ đầy đủ</span>
-<span class="k">"showDimensions"</span>: {
-  <span class="k">"top"</span>:    { <span class="k">"labelPos"</span>: <span class="s">"inner"</span> },
-  <span class="k">"bottom"</span>: { <span class="k">"labelPos"</span>: <span class="s">"outer"</span> },
-  <span class="k">"right"</span>:  <span class="s">false</span>
-}</code></pre>
-
-  <h2>7. Đơn vị</h2>
-  <div class="tip">Tất cả số đo dùng chung <code>unit</code> (mm/cm/m). <code>strokeWidth</code> cũng theo đơn vị đó. VD: unit mm, bản vẽ 60m → <code>strokeWidth: 150</code> ≈ 1.5px canvas.</div>
-
-  <h2>8. Phím tắt</h2>
-  <table>
-    <tr><th>Thao tác</th><th>Mô tả</th></tr>
-    <tr><td>Kéo chuột</td><td>Di chuyển (pan)</td></tr>
-    <tr><td>Lăn chuột</td><td>Zoom</td></tr>
-    <tr><td>Nút ⊙</td><td>Đặt lại zoom</td></tr>
-    <tr><td>▶ Vẽ</td><td>Render JSON</td></tr>
-    <tr><td>Xuất hình HTML</td><td>Tải file HTML chia sẻ được</td></tr>
-  </table>
-</div>
-</div>
 <main>
   <div id="left">
-    <div class="panel-title">Mô tả mặt bằng (JSON)</div>
+    <div class="panel-title">
+      Mô tả mặt bằng (JSON)
+    </div>
     <textarea id="input" spellcheck="false"></textarea>
     <div id="error-box"></div>
     <div id="toolbar">
       <button id="run">▶ Vẽ</button>
-      <button id="export-html" data-label="Xuất hình HTML">Xuất hình HTML</button>
+      <button id="copy-svg" data-label="Copy SVG">Copy SVG</button>
+      <button id="export-html" data-label="Xuất HTML">Xuất HTML</button>
       <button id="measure" title="Đo khoảng cách (Esc để thoát)">📏 Đo</button>
     </div>
   </div>
+
   <div id="right">
     <div id="svg-wrap"></div>
     <div id="zoom-controls">
@@ -842,6 +812,7 @@ window.addEventListener("load", () => {
 }, null, 2);
   runBtn.click();
 });
+
 </script>
 </body>
 </html>

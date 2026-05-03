@@ -7,7 +7,8 @@
     "start": "tsc -p tsconfig.json && node --watch dist/server.js",
     "dev": "tsc -p tsconfig.json && concurrently -k --names tsc,server --prefix-colors blue,green \"tsc -p tsconfig.json --watch --preserveWatchOutput\" \"node --watch dist/server.js\"",
     "open": "open http://localhost:3002/",
-    "rebuild": "tsc -p tsconfig.json && pkill -f 'node dist/server.js' 2>/dev/null; sleep 0.3 && node dist/server.js &"
+    "rebuild": "tsc -p tsconfig.json && pkill -f 'node dist/server.js' 2>/dev/null; sleep 0.3 && node dist/server.js &",
+    "build:pages": "node scripts/build-pages.mjs"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
