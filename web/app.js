@@ -269,6 +269,7 @@ runBtn.addEventListener("click", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(doc),
     });
+    if (!resp.ok) throw new Error("no server");
     const data = await resp.json();
     if (data.error) { errorBox.textContent = "Lỗi: " + data.error; return; }
     svgStr = data.svg;
